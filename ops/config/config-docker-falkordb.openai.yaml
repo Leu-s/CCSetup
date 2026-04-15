@@ -1,0 +1,10 @@
+server:
+  transport: http
+llm:
+  provider: openai
+  model: gpt-4.1
+embedder:
+  provider: openai
+  model: text-embedding-3-small
+database:
+  provider: falkordb

@@ -1,0 +1,10 @@
+[Unit]
+Description=Flush Graphiti spool for %I
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/%I
+Environment=CLAUDE_PROJECT_DIR=/%I
+ExecStart=/usr/bin/env bash -lc 'cd /%I && ./.claude/hooks/run_python.sh graphiti_flush.py --limit 50'

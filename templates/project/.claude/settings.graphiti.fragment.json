@@ -1,0 +1,113 @@
+{
+  "autoMemoryEnabled": false,
+  "extraKnownMarketplaces": {
+    "ecc": {
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/everything-claude-code"
+      }
+    },
+    "context-mode": {
+      "source": {
+        "source": "github",
+        "repo": "mksglu/context-mode"
+      }
+    },
+    "ui-ux-pro-max-skill": {
+      "source": {
+        "source": "github",
+        "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ecc@ecc": true,
+    "context-mode@context-mode": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  },
+  "hooks": {
+    "InstructionsLoaded": [
+      {
+        "matcher": "session_start|nested_traversal|path_glob_match|include|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh instructions_loaded.py",
+            "timeout": 15,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh session_start.py",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh cwd_changed.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "FileChanged": [
+      {
+        "matcher": "CLAUDE.md|.mcp.json|settings.json|settings.local.json|graphiti.json",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh file_changed.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh pre_compact.py",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh graphiti_stop.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "matcher": "project_settings|local_settings|skills",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_python.sh config_drift_guard.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "graphiti-memory": {
+      "type": "http",
+      "url": "${GRAPHITI_MCP_ENDPOINT}",
+      "headersHelper": "python3 /absolute/path/to/emit_graphiti_headers.py"
+    }
+  }
+}

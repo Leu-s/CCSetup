@@ -1,0 +1,6 @@
+# Local-only reverse proxy example.
+# This file does not add auth and is not a production remote-exposure template.
+http://127.0.0.1:8081 {
+  reverse_proxy 127.0.0.1:8000
+  encode zstd gzip
+}

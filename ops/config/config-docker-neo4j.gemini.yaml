@@ -1,0 +1,10 @@
+server:
+  transport: http
+llm:
+  provider: gemini
+  model: gemini-2.5-flash
+embedder:
+  provider: gemini
+  model: embedding-001
+database:
+  provider: neo4j

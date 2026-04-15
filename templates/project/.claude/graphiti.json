@@ -1,0 +1,109 @@
+{
+  "version": 2,
+  "groupIds": {
+    "prefix": "g",
+    "maxSlugChars": 40,
+    "hashChars": 16,
+    "registryPath": ".claude/state/graphiti-group-registry.json"
+  },
+  "capture": {
+    "sourceDescription": "Claude Code memory checkpoint",
+    "maxAssistantChars": 6000,
+    "maxChangedFiles": 50,
+    "maxGitStatusLines": 100
+  },
+  "recall": {
+    "maxEpisodes": 5,
+    "maxCharsPerEpisode": 1000,
+    "maxTotalChars": 5000
+  },
+  "queue": {
+    "ledgerPath": ".claude/state/graphiti-ledger.sqlite3",
+    "spoolDir": ".claude/state/graphiti-spool",
+    "archiveDir": ".claude/state/graphiti-archive",
+    "deadLetterDir": ".claude/state/graphiti-dead-letter",
+    "logsDir": ".claude/state/logs",
+    "locksDir": ".claude/state/locks",
+    "lastFlushPath": ".claude/state/graphiti-last-flush.json",
+    "engineStatePath": ".claude/state/graphiti-engine-state.json",
+    "bootstrapReceiptsDir": ".claude/state/bootstrap-receipts",
+    "bootstrapBackupsDir": ".claude/state/bootstrap-backups",
+    "maxAttempts": 6,
+    "baseRetrySeconds": 30,
+    "maxRetrySeconds": 3600,
+    "flushLockMaxAgeSeconds": 900
+  },
+  "runtime": {
+    "preferredPythonEnvVar": "GRAPHITI_HOOK_PYTHON",
+    "localRuntimeDir": ".claude/state/graphiti-runtime",
+    "runtimeStampPath": ".claude/state/graphiti-runtime-stamp.json"
+  },
+  "hooks": {
+    "watchRelativePaths": [
+      "CLAUDE.md",
+      ".mcp.json",
+      ".claude/settings.json",
+      ".claude/settings.local.json",
+      ".claude/graphiti.json"
+    ],
+    "watchMatcher": "CLAUDE.md|.mcp.json|settings.json|settings.local.json|graphiti.json"
+  },
+  "drift": {
+    "blockProjectConfigChanges": true,
+    "failDoctorOnWarnings": true,
+    "warnOnStorageMismatch": true
+  },
+  "mcp": {
+    "endpoint": "${GRAPHITI_MCP_ENDPOINT:-http://127.0.0.1:8000/mcp/}",
+    "healthUrl": "${GRAPHITI_HEALTH_URL:-http://127.0.0.1:8000/health}",
+    "toolName": "add_episode",
+    "timeoutSeconds": 30
+  },
+  "engine": {
+    "mode": "queue",
+    "backend": "neo4j",
+    "provider": "openai",
+    "graphitiCoreVersion": "0.28.2",
+    "graphitiMcpRef": "mcp-v1.0.2",
+    "neo4j": {
+      "uri": "${NEO4J_URI:-bolt://127.0.0.1:7687}",
+      "user": "${NEO4J_USER:-neo4j}",
+      "password": "${NEO4J_PASSWORD:-demodemo}",
+      "database": "${NEO4J_DATABASE:-neo4j}"
+    },
+    "falkordb": {
+      "uri": "${FALKORDB_URI:-redis://127.0.0.1:6379}",
+      "database": "${FALKORDB_DATABASE:-default_db}"
+    },
+    "openai": {
+      "model": "${GRAPHITI_OPENAI_MODEL:-gpt-4.1}",
+      "smallModel": "${GRAPHITI_OPENAI_SMALL_MODEL:-gpt-4.1-mini}",
+      "embeddingModel": "${GRAPHITI_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}"
+    },
+    "openai_generic": {
+      "baseUrl": "${OPENAI_BASE_URL:-http://127.0.0.1:11434/v1}",
+      "apiKey": "${OPENAI_API_KEY:-ollama}",
+      "model": "${GRAPHITI_OPENAI_GENERIC_MODEL:-deepseek-r1:7b}",
+      "smallModel": "${GRAPHITI_OPENAI_GENERIC_SMALL_MODEL:-deepseek-r1:7b}",
+      "embeddingModel": "${GRAPHITI_OPENAI_GENERIC_EMBEDDING_MODEL:-nomic-embed-text}",
+      "embeddingDim": 768
+    },
+    "gemini": {
+      "apiKey": "${GOOGLE_API_KEY:-}",
+      "model": "${GRAPHITI_GEMINI_MODEL:-gemini-2.5-flash}",
+      "embeddingModel": "${GRAPHITI_GEMINI_EMBEDDING_MODEL:-embedding-001}",
+      "rerankerModel": "${GRAPHITI_GEMINI_RERANKER_MODEL:-gemini-2.5-flash-lite}"
+    }
+  },
+  "doctor": {
+    "requiredHookEvents": [
+      "InstructionsLoaded",
+      "SessionStart",
+      "CwdChanged",
+      "FileChanged",
+      "PreCompact",
+      "Stop",
+      "ConfigChange"
+    ]
+  }
+}

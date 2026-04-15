@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "graphiti-memory": {
+      "type": "http",
+      "url": "${GRAPHITI_MCP_ENDPOINT}",
+      "headers": {
+        "Authorization": "Bearer ${GRAPHITI_MCP_AUTH_TOKEN}"
+      }
+    }
+  }
+}

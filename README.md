@@ -3,7 +3,7 @@
 This is a framework for a **consistent Claude Code baseline stack** with a managed **Graphiti memory layer at the repository level**.
 
 It pins down two planes:
-- **retained Claude Code ecosystem baseline**: ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage;
+- **retained Claude Code ecosystem baseline**: ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, serena, repomix, ccusage;
 - **repo-owned overlay**: Graphiti, queue-first Stop/PreCompact hooks, `MEMORY_GROUP_ID`, `GRAPHITI_STORAGE_GROUP_ID`, `codebase-memory-mcp`, repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`.
 
 ## Recommended install and configuration path
@@ -48,6 +48,7 @@ Windows-native flow without WSL is not a first-class target for this package.
 - Context7, GitHub MCP, Sequential Thinking — via ECC
 - context-mode
 - ui-ux-pro-max-skill
+- serena (LSP-backed symbolic navigation and symbolic edits; runs under `claude-code` context with `no-memories` mode)
 - repomix
 - ccusage
 

@@ -9,6 +9,7 @@ The framework has two clear planes.
 - Context7 / GitHub MCP / Sequential Thinking via ECC
 - context-mode
 - ui-ux-pro-max-skill
+- serena
 - repomix
 - ccusage
 
@@ -34,7 +35,10 @@ Context hygiene, not long-term memory and not a code graph.
 The canonical long-term memory of the project.
 
 ### codebase-memory-mcp
-The structural map of the code. It does not store conversational memory and does not duplicate Graphiti.
+The relationship-graph map of the code: callers, transitive reach, data-flow, IMPORTS edges, architectural slices, change-impact. It does not store conversational memory and does not duplicate Graphiti.
+
+### serena
+LSP-backed symbolic navigation and symbolic editing: file outline, symbol lookup by name-path, LSP-accurate references, atomic body replace, cross-file rename, safe-delete. It is read-and-edit surface; `codebase-memory-mcp` is read-only graph surface. They answer different questions and are not duplicates. `serena` runs under the `claude-code` context and the `no-memories` mode so its built-in file-ops and memory surfaces are disabled — Claude Code's own Read/Edit and Graphiti stay canonical.
 
 ### repo `.claude/settings.json`
 The canonical repo-level surface for:
@@ -58,10 +62,11 @@ Claude Code session
   -> Graphiti MCP exposes read/search tools to Claude
 ```
 
-## 4. Why there is no second code graph or second behavior plugin
+## 4. Why there is no second relationship-graph or second behavior plugin
 
 To avoid duplicating responsibility:
-- one structural code layer — `codebase-memory-mcp`;
+- one **relationship-graph** layer — `codebase-memory-mcp`;
+- one **symbolic-navigation and symbolic-edit** layer — `serena` (complementary, not a duplicate of `codebase-memory-mcp`);
 - one canonical long-term memory layer — Graphiti;
 - one baseline harness — ECC;
 - behavior principles — in `CLAUDE.md`, not in a separate plugin.
@@ -76,7 +81,7 @@ These surfaces remain external runtime boundaries of Claude Code and are not pac
 - the remote auth login flow to external MCP endpoints.
 
 Additionally, the following stay outside the baseline:
-- a second canonical memory engine;
-- a second code-graph engine on top of `codebase-memory-mcp`;
+- a second canonical memory engine (Graphiti stays canonical; `serena`'s memory tools are disabled via `no-memories` mode);
+- a second **relationship-graph** engine on top of `codebase-memory-mcp` (note: `serena` is LSP-symbolic, not a relationship graph, so it is permitted);
 - yet another behavior plugin on top of the principles in `CLAUDE.md`;
 - a broad plugin layer with an auth/perms surface without critical need.

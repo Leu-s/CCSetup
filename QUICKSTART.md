@@ -49,6 +49,21 @@ If the binary is not on PATH, set:
 export CODEBASE_MEMORY_MCP_BIN="/absolute/path/to/codebase-memory-mcp"
 ```
 
+## 3a. Install Serena (LSP-backed symbolic navigation and edits)
+
+`serena` covers a distinct role from `codebase-memory-mcp`: symbol-level LSP navigation and atomic refactors. It is not a duplicate. See [INSTALL.md](INSTALL.md) §4.5 for full details.
+
+```bash
+uv tool install -p 3.13 serena-agent@1.1.2 --prerelease=allow
+claude mcp add --scope user serena -- \
+  serena start-mcp-server \
+    --context claude-code \
+    --mode no-memories \
+    --project-from-cwd
+```
+
+The `--mode no-memories` flag is mandatory: Graphiti is the canonical long-term memory layer, and running Serena without `no-memories` would expose a second memory backend.
+
 ## 4. Prepare the Graphiti env
 
 ```bash
@@ -131,6 +146,7 @@ After that:
 - `SessionStart` provides a local memory checkpoint;
 - `Stop` and `PreCompact` capture summaries into the queue;
 - `codebase-memory-mcp` already has `auto_index=true` and an initial index;
+- `serena` is available for symbol-level LSP navigation and atomic refactors alongside `codebase-memory-mcp`;
 - Graphiti MCP tools are available for manual recall/search.
 
 Note: the first plugin install and the first `npx` run may require the network if local caches are still empty.

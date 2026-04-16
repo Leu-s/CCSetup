@@ -91,6 +91,7 @@ cd <repo> && claude mcp list
 Expected:
 - `graphiti-memory` (project scope, `http://127.0.0.1:8000/mcp/`)
 - `codebase-memory-mcp` (project scope, stdio command)
+- `serena` (user scope, stdio command from [INSTALL.md](INSTALL.md) §4.5)
 - **no** `memory` server
 - any user-scope MCPs from [INSTALL.md](INSTALL.md) §3.6 (e.g. `exa`) appear under user scope
 
@@ -99,6 +100,7 @@ If any URL-embedded secret was used for a user-scope MCP, `claude mcp list` prin
 Common failures:
 - `memory` present — see step 1 remedy and [INSTALL.md](INSTALL.md) §3.5.
 - `graphiti-memory` missing — `.mcp.json` was not seeded. Re-run the bootstrap.
+- `serena` missing — re-run the `claude mcp add --scope user serena` block from [INSTALL.md](INSTALL.md) §4.5. Confirm the binary with `uv tool list | grep serena` (expected `serena-agent v1.1.2`) and that `which serena` resolves on PATH. If not, re-run `uv tool install -p 3.13 serena-agent@1.1.2 --prerelease=allow`.
 
 ## 6. Plugin layer
 

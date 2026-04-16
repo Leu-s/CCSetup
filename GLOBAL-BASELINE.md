@@ -1,8 +1,9 @@
 # Global baseline
 
-This is the retained baseline that must be available for every repo. It consists of **three distinct layers**, and they should not be mixed:
+This is the retained baseline that must be available for every repo. It consists of **four distinct layers**, and they should not be mixed:
 - **repo-declared plugin layer** — via this package's `.claude/settings.json`;
 - **ECC rules surface** — a separate upstream-owned layer that the plugin system does not distribute automatically;
+- **user-scope MCP tools** — `serena` for LSP-backed symbolic navigation and symbolic edits;
 - **operator-local utilities** — `repomix` and `ccusage`.
 
 ## 1. Repo-declared plugin layer — the canonical path for the plugin portion
@@ -67,7 +68,23 @@ npm install
 
 An alternative is to copy `rules/common` and the needed language directories into `~/.claude/rules/` or the project `.claude/rules/`.
 
-## 4. Operator-local utilities
+## 4. User-scope MCP tools
+
+### serena
+Serena is the LSP-backed symbolic-navigation and symbolic-edit surface. It is distinct from `codebase-memory-mcp` (relationship-graph reads) and from Graphiti (cross-session memory). Required flags: `--context claude-code` (auto-excludes tools overlapping with Claude Code's built-ins), `--mode no-memories` (disables Serena's memory surface so Graphiti stays canonical).
+
+```bash
+uv tool install -p 3.13 serena-agent@1.1.2 --prerelease=allow
+claude mcp add --scope user serena -- \
+  serena start-mcp-server \
+    --context claude-code \
+    --mode no-memories \
+    --project-from-cwd
+```
+
+See [INSTALL.md](INSTALL.md) §4.5 for environment variables, LSP language server notes, and verification.
+
+## 5. Operator-local utilities
 
 ### repomix
 ```bash
@@ -87,7 +104,7 @@ Or:
 npm install -g ccusage
 ```
 
-## 5. What ECC covers
+## 6. What ECC covers
 
 ECC brings in:
 - Context7
@@ -96,7 +113,7 @@ ECC brings in:
 
 Do not duplicate them in the repo `.mcp.json`.
 
-## 6. How to verify the baseline
+## 7. How to verify the baseline
 
 After bootstrapping a specific repo:
 ```bash

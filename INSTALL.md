@@ -220,6 +220,84 @@ The package will then itself run:
 
 That is, the hidden first-run step no longer stays undocumented.
 
+## 4.5 Install Serena (LSP-backed symbolic navigation + refactor)
+
+Serena provides symbol-level navigation and atomic refactors via LSP (outline a file, find exact references, rename across files, replace a symbol's body, insert-before/after-symbol, safe-delete). It is the read-and-edit complement to `codebase-memory-mcp`'s read-only relationship graph. See `USER-MANUAL.md` §2 and §6 for the boundary rule and when to reach for each.
+
+### Install the binary (standardized path: `uv tool install`)
+
+```bash
+# uv is required; install once if missing
+command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
+
+uv tool install -p 3.13 serena-agent@1.1.2 --prerelease=allow
+```
+
+Pin to the released tag above. To track upstream: `uv tool upgrade serena-agent --prerelease=allow`. The binary lands on PATH as `serena`.
+
+**Why not `pip install` or `pipx install`:** upstream supports uv/uvx only. `pip` and `pipx` paths are not first-class.
+
+### Register Serena as a user-scope MCP
+
+```bash
+claude mcp add --scope user serena -- \
+  serena start-mcp-server \
+    --context claude-code \
+    --mode no-memories \
+    --project-from-cwd
+```
+
+Flags explained:
+- `--context claude-code` — runs Serena in the profile that deliberately disables its basic file/search/shell tools (`read_file`, `list_dir`, `search_for_pattern`, `replace_content`, `find_file`, `create_text_file`, `execute_shell_command`). Claude Code's own Read/Edit/Grep/Bash stay canonical; no overlap.
+- `--mode no-memories` — disables Serena's internal memory surface (`write_memory`, `read_memory`, `list_memories`, `edit_memory`, `rename_memory`, `delete_memory`) and its onboarding flow. Graphiti is the canonical long-term memory; two memory backends produce split state.
+- `--project-from-cwd` — Serena binds to the current working directory as its active project on session start; combined with `claude-code` context it enforces single-project mode. You can override per repo with `--project "$(pwd)"` if you need an explicit path.
+
+### Environment (optional, recommended)
+
+Add to `~/.claude/settings.json` under `env` (see §1.5) or to your shell profile:
+
+```json
+{
+  "env": {
+    "SERENA_USAGE_REPORTING": "false",
+    "MCP_TIMEOUT": "60000"
+  }
+}
+```
+
+- `SERENA_USAGE_REPORTING=false` — opt out of the anonymous startup ping (added in v1.1.2).
+- `MCP_TIMEOUT=60000` — bumps the MCP connection timeout to 60s. First-session LSP cold starts for heavy languages (Swift, Kotlin) can exceed the default.
+
+### Per-project config (auto-created on first activation)
+
+On first Serena activation inside a repo, Serena writes `.serena/project.yml` (versioned) and may write `.serena/project.local.yml` (gitignored). If the auto-detected language set is wrong, edit `.serena/project.yml` to list the languages explicitly (`languages: [swift, typescript]`) and commit it.
+
+**Keep `.serena/` out of the state tree.** Serena writes symbol caches and language-server scratch data to `.serena/` by default. Add `.serena/` to the repo `.gitignore` and to the `SECURITY.md` §7 deny snippet so Claude does not read or commit it:
+
+```
+.serena/
+```
+
+### Verify
+
+```bash
+claude mcp list | grep -i serena
+# Expected: `serena: serena start-mcp-server ... - ✓ Connected` at user scope
+
+uv tool list | grep serena
+# Expected: `serena-agent v1.1.2` (or newer pinned tag). The `serena` CLI itself has no `--version` flag; use `uv tool list` to confirm the installed version.
+```
+
+### Language-server notes
+
+Serena auto-downloads and pins most LSPs with SHA256 verification (Swift, Kotlin, TypeScript, C#, Dart, Lua, PHP, Elixir, etc.) and auto-installs a pinned `typescript-language-server` / `bash-language-server` / `intelephense` / Vue LS via npm. A few LSPs are not auto-installed and must come from the system:
+- Go — `gopls` (install via `go install golang.org/x/tools/gopls@latest`)
+- Rust — `rust-analyzer` (install via `rustup component add rust-analyzer`)
+- Python — `pyright` (install via `uv tool install pyright` or a local venv)
+- Zig, Crystal, Fortran, Erlang, OCaml, Perl, R, Nix — install the upstream language server per its project docs
+
+Override an auto-managed LSP with a system-installed version via `ls_specific_settings.<lang>.ls_path` in `~/.serena/serena_config.yml`.
+
 ## 5. Choose a backend for Graphiti
 
 ### Canonical baseline

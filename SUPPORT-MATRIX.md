@@ -19,6 +19,7 @@ Not a first-class target in this package:
 - Sequential Thinking via ECC
 - context-mode
 - ui-ux-pro-max-skill
+- serena (LSP-backed symbolic navigation and symbolic edits; user-scope MCP, `no-memories` mode)
 - repomix
 - ccusage
 
@@ -49,6 +50,7 @@ Not a first-class target in this package:
 - `repomix` runtime code when invoked through `npx`
 - `ccusage` runtime code when invoked through `npx`
 - `codebase-memory-mcp` binary install command
+- `serena` binary install (`uv tool install -p 3.13 serena-agent@1.1.2 --prerelease=allow`) and user-scope MCP registration with `--context claude-code --mode no-memories --project-from-cwd`
 
 ## 3. What ships in the package code
 

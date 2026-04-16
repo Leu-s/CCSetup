@@ -31,18 +31,20 @@ The system has clear roles.
 
 ### Repo layer
 - **Graphiti** — the canonical long-term memory of the project.
-- **codebase-memory-mcp** — structural memory of the code.
+- **codebase-memory-mcp** — relationship graph of the code (callers, reach, data-flow, IMPORTS, architecture).
+- **serena** — LSP-backed symbolic navigation and atomic refactors (file outline, symbol lookup, rename, replace body).
 - **repo hooks** — automatic capture and delivery of memory summaries.
 - **`CLAUDE.md`** — working principles, tool priority, and project identity.
 - **repo `.claude/settings.json`** — hooks plus the reproducible plugin baseline.
 
 ## 2. Tool order
 
-1. **`codebase-memory-mcp`** — structural questions about the code.
-2. **Graphiti** — continuity, decisions, constraints, unresolved risks.
-3. **Context7** — current library/framework docs.
-4. **GitHub MCP** — issues, PRs, branches, repo actions.
-5. **raw file reads** — only after narrowing the search.
+1. **`codebase-memory-mcp`** — graph-scale structural questions: callers, transitive reach, data-flow, IMPORTS, architecture, impact radius.
+2. **`serena`** — single-symbol LSP operations and atomic refactors: file outline, symbol lookup, exact references, rename, replace body, insert-before/after-symbol, safe-delete. Pair with (1) — `serena` answers "where is this one symbol and how do I change it safely", `codebase-memory-mcp` answers "what else depends on it".
+3. **Graphiti** — continuity, decisions, constraints, unresolved risks.
+4. **Context7** — current library/framework docs.
+5. **GitHub MCP** — issues, PRs, branches, repo actions.
+6. **raw file reads** — only after narrowing the search.
 
 ## 3. How automatic memory works in the repo
 
@@ -116,9 +118,27 @@ So by the time you first open the repo in Claude Code, the structural layer is n
 
 ### Use `codebase-memory-mcp` when
 - you need to find the entry point in an unfamiliar repo;
-- you need to understand who calls what;
-- you need to assess impact before a code change;
+- you need to understand who calls what across the whole repo (transitive callers);
+- you need to trace data-flow or cross-service paths;
+- you need to assess impact before a code change (`detect_changes`);
+- you need an architectural overview or cross-module dependency slice;
 - you need to reduce the number of raw file reads.
+
+### Use `serena` when
+- you need the outline of a specific file (classes/methods/variables via LSP);
+- you need exact references to a symbol (LSP-accurate, not text matches);
+- you are performing a refactor: cross-file rename, atomic body replace, safe-delete, insert-before/after-symbol;
+- you need to read a single symbol's body by its qualified name;
+- you know the symbol you want to touch and `codebase-memory-mcp` already narrowed the scope.
+
+`serena` and `codebase-memory-mcp` compose: start with `codebase-memory-mcp` to find the candidates and the transitive reach, then use `serena` to execute the precise change. Never use `serena`'s memory tools — Graphiti owns that role, and `serena` runs with `no-memories` mode so its memory surface is disabled.
+
+### Disambiguating overlaps between `serena` and `codebase-memory-mcp`
+
+Two pairs of capabilities can look similar on the surface. Pick the correct one by the axis of the question:
+
+- **"Find references to this symbol"** → `serena` when you need LSP-accurate per-symbol references (follows type-aware bindings, ignores unrelated textual matches). Use `codebase-memory-mcp` when you need transitive reach across the whole repo ("what eventually calls this", "what's the impact radius"), not just direct LSP references.
+- **"Show me a function's body"** → `serena.find_symbol` when you want the body of one specific symbol by qualified name. Use `codebase-memory-mcp.get_code_snippet` when you want a snippet cited alongside graph-scale context the graph query already returned.
 
 ## 7. How ECC hooks, context-mode, and repo Graphiti hooks interact
 

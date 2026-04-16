@@ -27,10 +27,10 @@ Supported operator environment is Linux, macOS, or WSL. Windows-native shell wit
 
 The package is deliberately split, and the split is enforced by tests (`test_baseline_doctor.py`, `test_bootstrap_hygiene.py`) — do not collapse it:
 
-1. **Retained Claude Code baseline** (ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage) — the package only *declares* the plugin portion reproducibly via `extraKnownMarketplaces` + `enabledPlugins` in the seeded repo `.claude/settings.json`. It does **not** install ECC rules, `repomix`, `ccusage`, or the `codebase-memory-mcp` binary. Those are upstream flows, and docs must keep saying so.
+1. **Retained Claude Code baseline** (ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, serena, repomix, ccusage) — the package only *declares* the plugin portion reproducibly via `extraKnownMarketplaces` + `enabledPlugins` in the seeded repo `.claude/settings.json`. It does **not** install ECC rules, `repomix`, `ccusage`, the `codebase-memory-mcp` binary, or the `serena-agent` binary / user-scope MCP registration. Those are upstream flows, and docs must keep saying so.
 2. **Repo-owned overlay** (Graphiti + `codebase-memory-mcp` project entry) — the package *does* automate this, end-to-end: templates, hooks, queue/ledger/archive path, `codebase-memory-mcp` first-run `auto_index=true` + initial `index_repository`, and admin CLI.
 
-Never introduce a second long-term memory engine, a second code-graph layer, or a second behavior plugin; `CLAUDE.md` is where behavior principles live. See `STACK-DECISIONS.md` for the exclusion list.
+Never introduce a second long-term memory engine (Graphiti is canonical), a second relationship-graph layer (`codebase-memory-mcp` is canonical), or a second behavior plugin; `CLAUDE.md` is where behavior principles live. **LSP-backed symbolic-navigation and symbolic-edit tooling — currently `serena` — is a distinct role and is permitted alongside `codebase-memory-mcp`**; the invariant is role-based, not tool-category-based. `serena` itself must run under the `claude-code` context with `--mode no-memories` so its memory surface is disabled — Graphiti remains the sole long-term memory backend. See `STACK-DECISIONS.md` for the exclusion list.
 
 ### Data flow in a bootstrapped repo
 

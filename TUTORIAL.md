@@ -10,7 +10,7 @@ Its normal mode is:
 ## 1. What this package is in practice
 
 The package gives you two layers:
-- **the base Claude Code baseline**: ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage;
+- **the base Claude Code baseline**: ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, serena, repomix, ccusage;
 - **the repo overlay**: Graphiti memory, `codebase-memory-mcp`, repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`, hooks, and the state tree.
 
 So it is not just "memory". It is a working environment for Claude Code around a specific repository.
@@ -27,7 +27,7 @@ So it is not just "memory". It is a working environment for Claude Code around a
 ### What Claude Code does
 - reads `README.md`, `QUICKSTART.md`, `INSTALL.md`, `USER-MANUAL.md`;
 - runs the install flow and bootstraps the repo;
-- then works through the agreed tool order: `codebase-memory-mcp` → Graphiti → Context7 → GitHub MCP → raw files.
+- then works through the agreed tool order: `codebase-memory-mcp` → `serena` → Graphiti → Context7 → GitHub MCP → raw files.
 
 ### What the framework does automatically
 - seeds the repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`;
@@ -125,6 +125,9 @@ Tell it to use `ccusage`.
 
 ### When the task is UI/UX
 Say explicitly that it can lean on `ui-ux-pro-max-skill`.
+
+### When you need to change one specific symbol or perform an atomic refactor
+Tell Claude Code to use `serena` after `codebase-memory-mcp` has narrowed the scope — `codebase-memory-mcp` finds what depends on the symbol across the repo; `serena` then inspects and edits that symbol via LSP (outline, rename, replace body, insert-before/after-symbol, safe-delete). `serena` runs with `--mode no-memories` so it does not become a second memory backend alongside Graphiti; you will not see memory-writing tools from it.
 
 ## 8. What is automated and what is not
 

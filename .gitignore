@@ -23,3 +23,6 @@ templates/project/.claude/state/*
 # Test ad-hoc artifacts
 .tmp/
 *.log
+
+# Serena (LSP-backed MCP) per-project cache and local overrides
+.serena/

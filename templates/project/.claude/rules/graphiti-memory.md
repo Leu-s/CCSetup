@@ -4,7 +4,8 @@
 - Use `GRAPHITI_STORAGE_GROUP_ID` for Graphiti memory reads and writes.
 - `MEMORY_GROUP_ID` is the human-readable project identifier. Do not pass it directly to Graphiti as a storage namespace.
 - Do not invent a new storage group id during normal work.
-- Use `codebase-memory-mcp` first for structural code questions. Use Graphiti for continuity across sessions.
+- Use `codebase-memory-mcp` first for graph-scale structural code questions (reach, data-flow, IMPORTS, architecture, impact radius). Use `serena` for symbol-level navigation and atomic refactors (find/rename/replace a specific symbol via LSP). Use Graphiti for continuity across sessions.
+- Never use `serena`'s memory tools — run `serena` with the `no-memories` mode. Graphiti is the canonical long-term memory; two memory backends produce split state.
 - Store only high-signal project memory:
   - architectural decisions
   - important constraints

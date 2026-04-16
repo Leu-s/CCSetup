@@ -11,7 +11,8 @@ GRAPHITI_STORAGE_GROUP_ID: g_your_project_storage_id
 - Stay goal-driven. Translate the request into clear success criteria and verify that the result actually satisfies them.
 
 ## Tool Priority
-- Use `codebase-memory-mcp` first for structural questions about symbols, call paths, module relationships, routes, and impact radius.
+- Use `codebase-memory-mcp` first for graph-scale structural questions: call paths, transitive reachability, data-flow, IMPORTS edges, module relationships, routes, impact radius, architectural slices. This is the only tool that answers "what eventually reaches X across the whole repo".
+- Use `serena` for symbol-level navigation and refactors: file outline, exact symbol lookup by name-path, LSP-accurate references, atomic body replace, cross-file rename, safe-delete, insert-before/after-symbol. `serena` edits via LSP where everything else reads. Pair with `codebase-memory-mcp` for the broader picture — `serena` answers "where is this one symbol defined and how do I change it safely"; `codebase-memory-mcp` answers "what else depends on it across the repo".
 - Use Graphiti for cross-session memory: decisions, constraints, user preferences, unresolved risks, and important outcomes.
 - Use Context7 for current library and framework documentation.
 - Use GitHub MCP for issues, pull requests, branches, and repository operations.
@@ -26,7 +27,8 @@ The following retained plugins are active in this workspace. Invoke their skills
 
 ## Excluded Surfaces
 - Do not use the `memory` MCP shipped by `everything-claude-code`. Graphiti is the canonical long-term memory layer for this repository, and writing to two memory backends produces split state, conflicting recall, and drift between sessions.
-- Do not introduce a second code-graph or symbol-index tool alongside `codebase-memory-mcp`.
+- Do not introduce a second **relationship-graph** tool alongside `codebase-memory-mcp`. `serena` is a permitted, distinct role (LSP-backed symbolic navigation and symbolic edits) and is not a duplicate of `codebase-memory-mcp`.
+- Do not use `serena`'s memory tools (`write_memory`, `read_memory`, `list_memories`, `edit_memory`, `rename_memory`, `delete_memory`) or its onboarding flow. Graphiti is the canonical long-term memory; `serena` must run with the `no-memories` mode so its memory surface is disabled.
 - Do not re-enable `autoMemoryEnabled` in `.claude/settings.json`; the Graphiti hook pipeline owns memory capture.
 
 ## Memory Write Triggers

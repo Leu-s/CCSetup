@@ -22,6 +22,14 @@ The repo still declaratively carries the plugin layer via `.claude/settings.json
 
 Warning: the ECC bundle ships a `memory` MCP — **do not use it**. Graphiti is the canonical long-term memory layer in this framework; rationale is in [USER-MANUAL.md](USER-MANUAL.md).
 
+Disable it immediately after plugin install:
+
+```bash
+claude mcp remove memory
+```
+
+Add `disabledMcpjsonServers: ["memory"]` to `~/.claude/settings.json` as a second barrier. See [INSTALL.md](INSTALL.md) §3.5 for details.
+
 ### Local operator utilities
 These must be available:
 - `repomix` or `npx`
@@ -89,6 +97,10 @@ What happens automatically:
 - an initial `codebase-memory-mcp cli index_repository` for this repo.
 
 ## 8. Check state
+
+For a consolidated verification sequence with expected output per command and common failure remedies, see [POST-INSTALL-CHECKLIST.md](POST-INSTALL-CHECKLIST.md).
+
+Quick smoke test:
 
 ```bash
 ./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo

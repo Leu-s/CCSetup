@@ -23,11 +23,47 @@ During install, only four kinds of manual involvement may be required from you:
 
 Required:
 - Claude Code
-- Python 3.10+
-- `python3 -m venv`
+- Python 3.10+ with the `venv` module available
+  - Debian/Ubuntu: `sudo apt install python3-venv`
+  - macOS (Homebrew or python.org Python): included by default
+  - verify with `python3 -m venv --help` before continuing
 - Git
 - Docker + Docker Compose for the live Graphiti backend
 - Node.js / `npx` for `repomix`, `ccusage` and the plugin ecosystem
+
+## 1.5 Recommended baseline user settings (optional, reduces friction)
+
+These are operator-level, not repo-level — they affect Claude Code across every project, not just the bootstrapped repo. You can skip this section; the install works without it. It is listed here because setting these once upfront removes a class of avoidable errors later.
+
+Edit `~/.claude/settings.json`:
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "effortLevel": "high",
+  "showThinkingSummaries": true,
+  "disableSkillShellExecution": true,
+  "cleanupPeriodDays": 14,
+  "disabledMcpjsonServers": ["memory"],
+  "env": {
+    "API_TIMEOUT_MS": "600000",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "BASH_MAX_TIMEOUT_MS": "900000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  }
+}
+```
+
+Keys used here:
+- `model`, `effortLevel` (values: `low` / `medium` / `high`) — default reasoning profile.
+- `showThinkingSummaries` — expose extended-thinking summaries in the UI.
+- `disableSkillShellExecution` — must be a **boolean**, not a string; disables auto-run of shell snippets emitted by skills.
+- `cleanupPeriodDays` — how long Claude Code keeps session logs before cleanup.
+- `disabledMcpjsonServers: ["memory"]` — belt-and-suspenders reject on the ECC `memory` MCP if it lands in any `.mcp.json` Claude Code reads (see §3.5). Catches re-registration after plugin updates.
+- `API_TIMEOUT_MS` / `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` — raise default timeouts for long-running MCP calls and bash tasks.
+- `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` — opt out of optional telemetry.
+
+Restart Claude Code after editing for the new keys to take effect. Existing sessions use the config snapshot from when they started.
 
 ## 2. Unpack the package
 
@@ -47,6 +83,22 @@ The repo bootstrap will itself add into `.claude/settings.json`:
 for ECC, context-mode and ui-ux-pro-max-skill.
 
 This reproduces the **plugin portion** of the retained baseline on a fresh clone and in cloud sessions, provided there is trust and access to the marketplace source.
+
+Each entry in `extraKnownMarketplaces` has a `source` object whose `ref` field pins the marketplace to a specific upstream tag, branch, or commit. Example shape:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "everything-claude-code": {
+      "source": { "source": "github", "repo": "affaan-m/everything-claude-code", "ref": "vX.Y.Z" }
+    }
+  }
+}
+```
+
+Pinning is the difference between a reproducible bootstrap and "it worked on my machine last Tuesday" — unpinned marketplaces silently move when the upstream repo pushes a new commit, and a seeded repo can drift between operators without any local change.
+
+The seeded baseline ships with known-good `ref` values; re-run `baseline-doctor` after the bootstrap to confirm the marketplace/plugin layer matches expectations. When you want a newer tag, update the `ref` inside the matching `source` block deliberately and re-run `/reload-plugins` (or re-bootstrap).
 
 ### 3.2 For local convenience — install plugins immediately
 ```text
@@ -69,7 +121,8 @@ claude plugin install context-mode@context-mode
 claude plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
 claude plugin install ui-ux-pro-max@ui-ux-pro-max-skill
 ```
-The slash-command path remains the default for an interactive session; the CLI is an alternative for automation.
+
+**After §3.2 or §3.2a: jump to §3.5 to disable the ECC `memory` MCP before continuing.** ECC registers it during plugin install; if you move on through §3.3–§3.4 without disabling it, you bootstrap a repo with two live memory backends.
 
 ### 3.3 ECC rules — a separate required step if you want the full ECC rules surface
 The current ECC limitation is this: plugin install does not distribute `rules` automatically. For the full ECC rules surface, take one of the two paths.
@@ -98,16 +151,61 @@ Important:
 - The first plugin install and the first `npx` run may require the network if local caches are still empty.
 - ECC bundle ships a `memory` MCP — **do not use it**. Graphiti is the canonical long-term memory layer for this framework. Rationale and the exclusion list are in [USER-MANUAL.md](USER-MANUAL.md).
 
+### 3.5 Disable the ECC `memory` MCP
+
+The ECC bundle registers a `memory` MCP during its install. It duplicates Graphiti's role in this framework and must be off before you bootstrap any repo. Run this immediately after §3.2 or §3.2a:
+
+```bash
+claude mcp remove memory
+claude mcp list | grep -i memory   # should now show no `memory` server
+```
+
+Two barriers catch this condition:
+- `claude mcp remove memory` unregisters the server from the CLI for the current scope.
+- `disabledMcpjsonServers: ["memory"]` in `~/.claude/settings.json` (see §1.5) rejects the server if it is re-registered via any `.mcp.json` Claude Code reads — a plugin update, an ECC reinstall, or a future bootstrap that inadvertently writes it.
+
+Running two long-term memory backends at once produces split state and drifting recall across sessions — `baseline-doctor` flags this condition as `graphiti_overlap_mcps_in_repo` (error) or `graphiti_overlap_mcps_in_user_scope` / `graphiti_overlap_mcps_from_plugins` (warnings).
+
+### 3.6 User-scope MCPs (optional)
+
+Some MCPs belong at the operator level — available in every project, not only the bootstrapped one. Examples: `exa` for web research, a user-wide GitHub token.
+
+Prefer header-based auth when the server supports it, so the API key does not end up in URLs, process listings (`ps`), or `claude mcp list` output:
+
+```bash
+read -rs -p "EXA_API_KEY: " EXA_API_KEY && export EXA_API_KEY
+claude mcp add --scope user --transport http exa \
+  https://mcp.exa.ai/mcp \
+  --header "x-api-key: ${EXA_API_KEY}"
+```
+
+If the server only accepts URL-embedded auth, redact the key before sharing any `claude mcp list` output or screenshots — the URL form is visible to anyone who inspects the user-scope MCP state:
+
+```bash
+claude mcp add --scope user --transport http exa \
+  "https://mcp.exa.ai/mcp?exaApiKey=${EXA_API_KEY}"
+```
+
+Using `read -rs` instead of pasting `export EXA_API_KEY="..."` keeps the key out of your shell history (`~/.bash_history`, `~/.zsh_history`) even if `HISTCONTROL` is not configured.
+
+Scope precedence in Claude Code is **local > project > user > plugin**. Keep each MCP at exactly one scope — multiple scopes cause conflicting approvals and split state.
+
+Do not add `graphiti-memory` or `codebase-memory-mcp` at user scope: they are intentionally project-scoped and live in the bootstrapped repo's `.mcp.json`, so that project approval is distinct per repo.
+
 ## 4. Install the `codebase-memory-mcp` binary without auto-configuration
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DeusData/codebase-memory-mcp/main/install.sh | bash -s -- --skip-config
 ```
 
+**Supply-chain note:** this pipes a remote script directly into `bash` from an unpinned `main` branch. Inspect the script before running it (`curl -fsSL ... | less`) and consider pinning to a released tag once the upstream project publishes them. The same applies to any `curl | bash` pattern in the rest of this guide.
+
 If the binary is not on PATH:
 ```bash
 export CODEBASE_MEMORY_MCP_BIN="/absolute/path/to/codebase-memory-mcp"
 ```
+
+Make sure the resolved path is not world-writable — a writable binary location lets a local attacker swap the executable.
 
 The package will then itself run:
 - `codebase-memory-mcp config set auto_index true`
@@ -156,6 +254,8 @@ By default:
 - the host bind is `127.0.0.1`
 - the demo password is `demodemo`
 
+**Secret hygiene:** this file lives at `~/.claude/` by design — outside the repo tree. Do not commit it, symlink it back into the repo, or sync it via git. Shipped Compose stacks load it via `${HOME}/.claude/graphiti.neo4j.env` with `required: false`, so a missing file does not break `docker compose config` (env defaults take over).
+
 ### FalkorDB
 ```bash
 cp ops/env/graphiti.falkordb.env.example ~/.claude/graphiti.falkordb.env
@@ -166,6 +266,8 @@ Fill in at minimum:
 - `OPENAI_API_KEY` or `GOOGLE_API_KEY`
 - leave `SEMAPHORE_LIMIT=1`
 - change `GRAPHITI_MCP_CONFIG_PATH` if needed
+
+**Secret hygiene:** same rule as Neo4j — the file lives at `~/.claude/`, never symlinked or committed.
 
 ## 7. Bring up the Graphiti stack
 
@@ -185,6 +287,20 @@ cd ..
 
 ## 8. Add shell env for the host direct-ingest runtime
 
+These exports must be live in the same shell used to run §9 (bootstrap) and §10 (verification). If you open a new terminal later, repeat this step — `graphiti_admin.py` reads from the process environment, not from the repo.
+
+**Prefer sourcing the env file from §6 to avoid leaking keys into shell history:**
+
+```bash
+set -a
+. ~/.claude/graphiti.neo4j.env      # or graphiti.falkordb.env
+set +a
+```
+
+`set -a` / `set +a` exports every variable defined in the file for the duration of the shell. The file already contains `OPENAI_API_KEY` / `GOOGLE_API_KEY`, `NEO4J_PASSWORD`, and the defaults from §6. Then export the host-side runtime values below that are not in the env file.
+
+The literal `export KEY="..."` blocks below are reference templates for the variables the host runtime expects. If you paste them directly, your shell will record the key in `~/.bash_history` / `~/.zsh_history` unless you have `HISTCONTROL=ignorespace` and prefix each export with a space.
+
 ### Neo4j + OpenAI
 ```bash
 export OPENAI_API_KEY="..."
@@ -192,7 +308,7 @@ export GRAPHITI_MCP_ENDPOINT="http://127.0.0.1:8000/mcp/"
 export GRAPHITI_HEALTH_URL="http://127.0.0.1:8000/health"
 export NEO4J_URI="bolt://127.0.0.1:7687"
 export NEO4J_USER="neo4j"
-export NEO4J_PASSWORD="demodemo"
+export NEO4J_PASSWORD="${NEO4J_PASSWORD:-demodemo}"  # override the demo default in production
 export GRAPHITI_OPENAI_MODEL="gpt-4.1"
 export GRAPHITI_OPENAI_SMALL_MODEL="gpt-4.1-mini"
 export GRAPHITI_OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
@@ -255,7 +371,32 @@ What bootstrap does:
 - configures `codebase-memory-mcp auto_index=true`;
 - runs the initial `index_repository`.
 
+## 9.5 Schedule flush (optional, recommended for long-running repos)
+
+Graphiti delivery runs on every session `Stop` when `queue.asyncFlushOnStop=true` in `.claude/graphiti.json`, but a scheduled flush catches missed retries, offline intervals, and cold repos that have not had a session in a while. Pick one path:
+
+### Linux / WSL via systemd
+Install user units from `ops/systemd/`. See [OPERATIONS.md](OPERATIONS.md) §5.1 for the `systemd-escape` / `systemctl --user enable` sequence.
+
+### Cross-platform via cron
+Install the wrapper at `~/.claude/hooks/graphiti-flush-cron.sh` and add a crontab entry. See [OPERATIONS.md](OPERATIONS.md) §5.2 for the full wrapper script and a sample crontab.
+
+### macOS-specific requirement
+`/usr/sbin/cron` does not have access to `~/.claude/**` by default on modern macOS. Without **Full Disk Access** (FDA), cron runs but silently cannot read the env file, repos list, or state directories — delivery fails without producing visible errors.
+
+Grant FDA:
+1. open `System Settings → Privacy & Security → Full Disk Access`;
+2. press `+`, use Cmd+Shift+G, add `/usr/sbin/cron`;
+3. toggle it on;
+4. also add the terminal app used to edit crontab (Terminal.app / iTerm), otherwise the edit saves but execution still cannot see protected paths.
+
+Verify: after the first scheduled fire, `~/.claude/state/cron-flush.log` should contain a `flush <repo>` line and no `Permission denied` / `Operation not permitted` messages.
+
 ## 10. Check install state
+
+For a consolidated verification sequence with expected output per command, see [POST-INSTALL-CHECKLIST.md](POST-INSTALL-CHECKLIST.md).
+
+The short version:
 
 ```bash
 ./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo

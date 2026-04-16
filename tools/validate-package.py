@@ -17,6 +17,7 @@ REQUIRED_FILES = [
     "STACK-DECISIONS.md",
     "QUICKSTART.md",
     "INSTALL.md",
+    "POST-INSTALL-CHECKLIST.md",
     "USER-MANUAL.md",
     "HOOKS.md",
     "OPERATIONS.md",

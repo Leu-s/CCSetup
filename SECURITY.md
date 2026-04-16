@@ -86,7 +86,7 @@ Then the following are mandatory:
 - network-level access restriction
 - separate password for Neo4j
 - separate token for the MCP proxy
-- verification that `.mcp.json` contains no hardcoded secrets
+- verification that no MCP registration contains a hardcoded secret — project `.mcp.json`, user-scope entries in `~/.claude.json`, or plugin-supplied servers. URL-embedded keys (e.g. `?apiKey=...`) count as hardcoded for this rule.
 
 ## 9. Multi-user usage
 

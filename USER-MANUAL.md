@@ -21,9 +21,9 @@
 Система має чіткі ролі.
 
 ### Retained Claude Code layer
-- **ECC plugin layer** — базовий harness: skills, agents, hooks і bundled MCP surface.
+- **`everything-claude-code@everything-claude-code` (ECC bundle)** — базовий harness: skills, agents, hooks і bundled MCP surface.
 - **ECC rules surface** — окремий upstream-owned шар; plugin install не розносить його автоматично.
-- **Context7 / GitHub MCP / Sequential Thinking** — приходять через ECC.
+- **Context7 / GitHub MCP / Sequential Thinking** — приходять через ECC bundle.
 - **context-mode** — зменшує шум від великих tool outputs у контексті.
 - **ui-ux-pro-max-skill** — design intelligence для UI/UX задач.
 - **repomix** — operator-local CLI для AI-friendly snapshot усього repo.
@@ -77,7 +77,7 @@
 Retained plugin baseline більше не живе лише в user scope.
 
 Після bootstrap repo `.claude/settings.json` уже декларує:
-- marketplace source для ECC, context-mode і ui-ux-pro-max-skill;
+- marketplace source для `everything-claude-code@everything-claude-code` (ECC bundle), `context-mode@context-mode` і `ui-ux-pro-max@ui-ux-pro-max-skill`;
 - `enabledPlugins` для цих трьох plugin-ів.
 
 Наслідок:
@@ -156,6 +156,15 @@ Plugin baseline при цьому поводиться інакше:
 5. **Не міняй `GRAPHITI_STORAGE_GROUP_ID` вручну без потреби.** Працюй через `MEMORY_GROUP_ID` і admin migration commands.
 6. **Тримай секрети в env, а не в git.**
 7. **Не плутай MCP health із ingest health.** Graphiti HTTP path і host-side direct ingest — різні перевірки.
+
+## 9a. Excluded surfaces
+
+Do not use the `memory` MCP shipped by the `everything-claude-code` bundle. Graphiti is the canonical long-term memory layer for this framework. Writing to two memory backends produces split state and conflicts with the queue/ledger/archive contract.
+
+Практично це означає:
+- не додавай bundled `memory` MCP у repo `.mcp.json`;
+- не викликай його tools паралельно з Graphiti в одній сесії;
+- якщо ECC bundle все одно його експонує, покладайся на `graphiti-memory` як єдиний write path.
 
 ## 10. Найкорисніші щоденні команди
 

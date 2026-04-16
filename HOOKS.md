@@ -31,7 +31,17 @@
 
 ## 6. `Stop`
 - capture summary після завершення відповіді;
-- не чекає live network ingest.
+- не чекає live network ingest — pack завжди пише payload тільки у локальний spool + ledger;
+- додаткова опція `queue.asyncFlushOnStop` у `.claude/graphiti.json` керує тим, чи Stop також ініціює доставку в Neo4j:
+  - `false` (default) — Stop тільки spools, delivery окремо (cron / systemd / manual flush);
+  - `true` — Stop додатково спавнить detached flush subprocess (через `start_new_session=True`, з `GRAPHITI_ASYNC_FLUSH=1` у env), щоб доставка жила поза critical path завершення сесії і не блокувала повернення керування користувачу.
+
+### 6.1 `Stop` (EN)
+- captures a session-end summary once the assistant turn finishes;
+- never waits on live network ingest — payload is always written to the local spool + ledger first;
+- the `queue.asyncFlushOnStop` flag in `.claude/graphiti.json` controls optional post-spool delivery:
+  - `false` (default) — Stop only spools, delivery is handled separately (cron, systemd, or manual flush);
+  - `true` — Stop additionally spawns a detached flush subprocess (via `start_new_session=True`, with `GRAPHITI_ASYNC_FLUSH=1` in the child env) so Neo4j delivery runs off the session-end critical path and does not block the user.
 
 ## 7. `ConfigChange`
 - блокує небажаний drift у package-managed project config.

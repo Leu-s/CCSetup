@@ -12,7 +12,7 @@
 ```json
 {
   "extraKnownMarketplaces": {
-    "ecc": {
+    "everything-claude-code": {
       "source": { "source": "github", "repo": "affaan-m/everything-claude-code" }
     },
     "context-mode": {
@@ -23,7 +23,7 @@
     }
   },
   "enabledPlugins": {
-    "ecc@ecc": true,
+    "everything-claude-code@everything-claude-code": true,
     "context-mode@context-mode": true,
     "ui-ux-pro-max@ui-ux-pro-max-skill": true
   }
@@ -111,9 +111,30 @@ export CODEBASE_MEMORY_MCP_SKIP_INITIAL_INDEX=1
 - `queue.*`
 - `runtime.*`
 
+### 5.1 `queue.*` recognized fields
+
+Paths, if не absolute, резолвляться відносно repo root.
+
+- `queue.ledgerPath` (string) — SQLite ledger, котрий відстежує pending / delivered / dead-letter episodes.
+- `queue.spoolDir` (string) — директорія для pending JSON payloads, які чекають на delivery.
+- `queue.archiveDir` (string) — успішно доставлені payloads переносяться сюди.
+- `queue.deadLetterDir` (string) — payloads, що вичерпали `maxAttempts`, осідають тут.
+- `queue.logsDir` (string) — директорія для JSONL hook/flush логів.
+- `queue.locksDir` (string) — файлові locks (наприклад, `graphiti-flush.lock`).
+- `queue.lastFlushPath` (string) — JSON snapshot останнього flush run (для `status` / `doctor`).
+- `queue.engineStatePath` (string) — per-engine runtime state snapshot для доставки.
+- `queue.bootstrapReceiptsDir` (string) — receipts від `graphiti_bootstrap.py` runs.
+- `queue.bootstrapBackupsDir` (string) — backups файлів, які bootstrap змінював.
+- `queue.maxAttempts` (int, default `6`) — скільки разів `graphiti_flush.py` пробує доставити один payload до того, як він стає dead-letter.
+- `queue.baseRetrySeconds` (int, default `30`) — base backoff між retries.
+- `queue.maxRetrySeconds` (int, default `3600`) — cap для exponential backoff.
+- `queue.flushLockMaxAgeSeconds` (int, default `900`) — після цього TTL stale flush lock вважається залишковим і знімається автоматично.
+- `queue.asyncFlushOnStop` (bool, default `false`) — коли `true`, `Stop` hook (`graphiti_stop.py`) після enqueue spawns detached flush subprocess, щоб delivery не блокував завершення сесії. Коли `false`, delivery виконується виключно cron wrapper-ом або ручним `graphiti_admin.py flush`.
+
 ## 6. Важливі invariants
 
 - `Graphiti` — canonical long-term memory.
 - `codebase-memory-mcp` — canonical structural code layer.
 - `autoMemoryEnabled` у project settings має бути `false`.
 - repo settings не повинні дублювати ECC plugin hooks.
+- `memory` MCP із `everything-claude-code` bundle не має бути enabled поруч із Graphiti. Graphiti є canonical long-term memory layer цього пакета; увімкнення bundled `memory` MCP створює split-state і conflicting recall між сесіями.

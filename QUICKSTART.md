@@ -16,9 +16,11 @@ cd ~/data/claude-code-framework-v7-ecosystem-final
 
 ### Plugin portion
 Repo все одно декларативно міститиме plugin layer через `.claude/settings.json`:
-- ECC
-- context-mode
-- ui-ux-pro-max-skill
+- `everything-claude-code@everything-claude-code` (ECC bundle)
+- `context-mode@context-mode`
+- `ui-ux-pro-max@ui-ux-pro-max-skill`
+
+Warning: ECC bundle ships a `memory` MCP — **не використовуй його**. Graphiti є канонічним long-term memory layer у цьому фреймворку; rationale — в [USER-MANUAL.md](USER-MANUAL.md).
 
 ### Local operator utilities
 Має бути доступно:

@@ -51,13 +51,25 @@ Repo bootstrap сам додасть у `.claude/settings.json`:
 ### 3.2 Локально для зручності — постав plugins одразу
 ```text
 /plugin marketplace add https://github.com/affaan-m/everything-claude-code
-/plugin install ecc@ecc
+/plugin install everything-claude-code@everything-claude-code
 /plugin marketplace add mksglu/context-mode
 /plugin install context-mode@context-mode
 /plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
 /plugin install ui-ux-pro-max@ui-ux-pro-max-skill
 /reload-plugins
 ```
+
+### 3.2a Альтернатива через CLI
+Той самий plugin layer можна підняти через non-interactive `claude` CLI — зручно для scripted bootstrap або fresh container:
+```bash
+claude plugin marketplace add https://github.com/affaan-m/everything-claude-code
+claude plugin install everything-claude-code@everything-claude-code
+claude plugin marketplace add mksglu/context-mode
+claude plugin install context-mode@context-mode
+claude plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
+claude plugin install ui-ux-pro-max@ui-ux-pro-max-skill
+```
+Slash-command path лишається default для інтерактивної сесії; CLI — альтернатива для автоматизації.
 
 ### 3.3 ECC rules — окремий required step, якщо хочеш повний ECC rules surface
 Актуальне обмеження ECC таке: plugin install не розносить `rules` автоматично. Для повного ECC rules surface зроби один із двох шляхів.
@@ -84,6 +96,7 @@ npx ccusage@latest
 - Якщо ECC ставиться як plugin, не копіюй його hooks вручну в repo `settings.json`.
 - `repomix` і `ccusage` не декларуються в repo settings; це operator-local CLI-утиліти.
 - Перший plugin install і перший `npx` запуск можуть вимагати мережу, якщо локальні cache ще порожні.
+- ECC bundle ships a `memory` MCP — **do not use it**. Graphiti є канонічним long-term memory layer для цього фреймворку. Rationale і exclusion list — в [USER-MANUAL.md](USER-MANUAL.md).
 
 ## 4. Постав `codebase-memory-mcp` binary без автоконфігурації
 

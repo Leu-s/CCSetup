@@ -23,10 +23,18 @@ During install, only four kinds of manual involvement may be required from you:
 
 Required:
 - Claude Code
-- Python 3.10+ with the `venv` module available
-  - Debian/Ubuntu: `sudo apt install python3-venv`
-  - macOS (Homebrew or python.org Python): included by default
-  - verify with `python3 -m venv --help` before continuing
+- Python 3.11, 3.12, or 3.13 with the `venv` module available
+  - Python 3.14 is **not** supported for the Graphiti hook runtime yet:
+    `graphiti-core 0.28.2` + `httpx 0.28` + `anyio 4.13` emit
+    `RuntimeError: Event loop is closed` during TLS `AsyncClient.aclose`
+    on CPython 3.14. `tools/install-hook-runtime.sh` refuses 3.14 as a
+    silent default and probes `python3.13` → `python3.12` → `python3.11`.
+    Override with `GRAPHITI_HOOK_PYTHON=/absolute/path/to/python` only if
+    you accept the regression. Background: [STACK-DECISIONS.md](STACK-DECISIONS.md)
+    "Python runtime version pin"; remediation: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) §13.
+  - Debian/Ubuntu: `sudo apt install python3.13-venv` (or `python3.12-venv` / `python3.11-venv`)
+  - macOS (Homebrew): `brew install python@3.13` (or `uv python install 3.13`)
+  - verify with `python3.13 -m venv --help` before continuing (substitute 3.12 / 3.11 as appropriate)
 - Git
 - Docker + Docker Compose for the live Graphiti backend
 - Node.js / `npx` for `repomix`, `ccusage` and the plugin ecosystem
@@ -41,6 +49,7 @@ Edit `~/.claude/settings.json`:
 {
   "model": "claude-opus-4-6",
   "effortLevel": "high",
+  "alwaysThinkingEnabled": true,
   "showThinkingSummaries": true,
   "disableSkillShellExecution": true,
   "cleanupPeriodDays": 14,
@@ -49,6 +58,11 @@ Edit `~/.claude/settings.json`:
   },
   "disabledMcpjsonServers": ["memory"],
   "env": {
+    "CLAUDE_CODE_EFFORT_LEVEL": "max",
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
+    "MAX_THINKING_TOKENS": "31999",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "400000",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "API_TIMEOUT_MS": "600000",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
     "BASH_MAX_TIMEOUT_MS": "900000",
@@ -57,17 +71,36 @@ Edit `~/.claude/settings.json`:
 }
 ```
 
-Keys used here:
-- `model`, `effortLevel` (values: `low` / `medium` / `high`) — default reasoning profile.
-- `showThinkingSummaries` — expose extended-thinking summaries in the UI.
+### Base keys
+- `model`, `effortLevel` (values: `low` / `medium` / `high`) — the persistable effort profile. `effortLevel: "max"` does not persist in `settings.json` (issue #43322); `max` is set via the env var below instead.
+- `alwaysThinkingEnabled: true` — extended thinking is always on, no Option+T toggle needed.
+- `showThinkingSummaries: true` — expose thinking blocks in the UI so you can audit the model's reasoning path.
 - `disableSkillShellExecution` — must be a **boolean**, not a string; disables auto-run of shell snippets emitted by skills.
 - `cleanupPeriodDays` — how long Claude Code keeps session logs before cleanup.
 - `permissions.deny: ["mcp__memory"]` — blocks tool calls against any `memory` MCP server, including ECC's plugin-scope one which cannot be removed without uninstalling the ECC plugin.
 - `disabledMcpjsonServers: ["memory"]` — a complementary barrier that rejects any `memory` server declared in `.mcp.json`, catching project-scope or future re-registration.
-- `API_TIMEOUT_MS` / `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` — raise default timeouts for long-running MCP calls and bash tasks.
-- `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` — opt out of optional telemetry.
+
+### Reasoning and thinking profile (required, not optional)
+
+The framework is built around deep multi-tool reasoning (`codebase-memory-mcp` for graph reach, `serena` for LSP-symbolic edits, Graphiti for continuity). That tool chain only pays off when the session runs with a deterministic deep-thinking budget rather than the default adaptive profile, which was observed to reduce Opus 4.6 thinking by ~67% after Feb 2026 (Stella Laurenzo analysis of 6,852 sessions; Boris Cherny publicly endorsed disabling adaptive on HN).
+
+- `CLAUDE_CODE_EFFORT_LEVEL=max` — sets effort to `max` (Opus 4.6 only, unbounded thinking budget). The env var is the only reliable way to persist `max` (the `effortLevel` key in `settings.json` does not accept it). Kept as a belt-and-suspenders default in case `DISABLE_ADAPTIVE_THINKING` is ever renamed or changed upstream.
+- `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` — disables adaptive reasoning on Opus 4.6 / Sonnet 4.6 and falls back to the fixed thinking budget controlled by `MAX_THINKING_TOKENS`. This is the primary "strong thinking" switch.
+- `MAX_THINKING_TOKENS=31999` — fixed 32K thinking budget per turn when adaptive is disabled. Use `31999`, not `32000`: issue [#18554](https://github.com/anthropics/claude-code/issues/18554) documents an off-by-one bug where Claude Code sends `budget+1` and exceeds the 32K model cap.
+- `CLAUDE_CODE_AUTO_COMPACT_WINDOW=400000` — for 1M-context Opus 4.6, compact earlier (at the 400K mark) to keep latency and output quality steady on long sessions. On a 200K model this is capped at the real window and is a no-op. Boris Cherny recommended this value for 1M tuning.
+- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` — enables [agent teams](https://code.claude.com/docs/en/agent-teams), which are coordinated multi-session Claude Code instances with a shared task list and direct inter-teammate messaging. This is orthogonal to subagents: subagents report back to the main session, teammates communicate with each other. Requires Claude Code v2.1.32+. The `TeamCreate`, `TeamDelete`, and `SendMessage` tools are only surfaced when this flag is set.
+
+Known trap: **do not set `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` above the default threshold (~83-95%)**. Issue [#31806](https://github.com/anthropics/claude-code/issues/31806) documents a `Math.min(userThreshold, defaultThreshold)` clamp that silently ignores values above the default; only lower values (e.g. `50` or `75`) actually take effect and only if the intent is "compact earlier". The framework does not set this key.
+
+### Operational timeouts and telemetry
+- `API_TIMEOUT_MS` / `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` — raise default timeouts for long-running MCP calls and bash tasks. Graphiti flush, full repo indexing, and `codebase-memory-mcp index_repository` all benefit from headroom.
+- `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` — opt out of optional telemetry (equivalent to setting `DISABLE_AUTOUPDATER`, `DISABLE_FEEDBACK_COMMAND`, `DISABLE_ERROR_REPORTING`, and `DISABLE_TELEMETRY` together).
 
 Restart Claude Code after editing for the new keys to take effect. Existing sessions use the config snapshot from when they started.
+
+### Reproducibility: these keys also ship in the repo settings fragment
+
+The same reasoning/thinking/agent-teams env block and `alwaysThinkingEnabled`/`showThinkingSummaries` flags are written into the project-scope `.claude/settings.json` during repo bootstrap (via `templates/project/.claude/settings.graphiti.fragment.json`). This is deliberate belt-and-suspenders: user-scope sets the operator default, project-scope reproduces the same profile on a fresh clone or cloud session where the operator's `~/.claude/settings.json` is not available. The `CLAUDE_CODE_EFFORT_LEVEL` env var takes precedence across scopes, so the env block does not conflict with `/effort` runtime switches during a session.
 
 ## 2. Unpack the package
 

@@ -31,7 +31,8 @@
     "maxAttempts": 6,
     "baseRetrySeconds": 30,
     "maxRetrySeconds": 3600,
-    "flushLockMaxAgeSeconds": 900
+    "flushLockMaxAgeSeconds": 900,
+    "asyncFlushOnStop": false
   },
   "runtime": {
     "preferredPythonEnvVar": "GRAPHITI_HOOK_PYTHON",

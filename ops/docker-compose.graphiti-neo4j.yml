@@ -47,7 +47,7 @@ services:
     command:
       - /bin/sh
       - -lc
-      - uv run main.py --config "$GRAPHITI_MCP_CONFIG_PATH" --transport http
+      - uv run main.py --config "$$GRAPHITI_MCP_CONFIG_PATH" --transport http
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
       interval: 15s

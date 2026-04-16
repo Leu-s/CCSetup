@@ -1,0 +1,25 @@
+# Operator-local secrets — never commit
+ops/env/*.env
+!ops/env/*.env.example
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Runtime/state in templates (real bootstrapped repos handle their own .gitignore)
+templates/project/.claude/state/*
+!templates/project/.claude/state/.gitignore
+
+# Test ad-hoc artifacts
+.tmp/
+*.log

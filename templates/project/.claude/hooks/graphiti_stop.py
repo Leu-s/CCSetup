@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import pathlib
+import subprocess
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -12,6 +14,26 @@ from lib.config import ensure_state_dirs, load_config
 from lib.observability import log_event
 from lib.queue_store import queue_payload
 from lib.util import load_stdin_json, project_dir, trim_text
+
+
+def _spawn_async_flush(root: pathlib.Path) -> None:
+    wrapper = root / ".claude" / "hooks" / "run_python.sh"
+    if not wrapper.exists():
+        return
+    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(root), "GRAPHITI_ASYNC_FLUSH": "1"}
+    try:
+        subprocess.Popen(
+            [str(wrapper), "graphiti_flush.py"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            cwd=str(root),
+            env=env,
+        )
+    except Exception:
+        pass
+
 
 def main() -> int:
     root = project_dir()
@@ -48,6 +70,10 @@ def main() -> int:
             "queued_file": str(queued),
         },
     )
+
+    if bool(config.get("queue", {}).get("asyncFlushOnStop", False)):
+        _spawn_async_flush(root)
+
     return 0
 
 if __name__ == "__main__":

@@ -94,7 +94,7 @@ if [[ -n "${GRAPHITI_RUNTIME_PIP_EXTRA_ARGS:-}" ]]; then
 fi
 
 if [[ "${GRAPHITI_SKIP_PIP_BOOTSTRAP:-0}" != "1" ]]; then
-  "$PIP_BIN" install --upgrade pip wheel setuptools "${PIP_EXTRA_ARGS[@]}" >/dev/null
+  "$PIP_BIN" install --upgrade pip wheel setuptools ${PIP_EXTRA_ARGS[@]+"${PIP_EXTRA_ARGS[@]}"} >/dev/null
 fi
 
 EXTRAS=()
@@ -110,7 +110,7 @@ if [[ ${#EXTRAS[@]} -gt 0 ]]; then
 else
   EXTRA_SPEC=""
 fi
-"$PIP_BIN" install "graphiti-core${EXTRA_SPEC}==${GRAPHITI_CORE_VERSION}" "${PIP_EXTRA_ARGS[@]}" >/dev/null
+"$PIP_BIN" install "graphiti-core${EXTRA_SPEC}==${GRAPHITI_CORE_VERSION}" ${PIP_EXTRA_ARGS[@]+"${PIP_EXTRA_ARGS[@]}"} >/dev/null
 
 cat > "$STAMP_PATH" <<STAMP
 {

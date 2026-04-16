@@ -165,6 +165,8 @@ async def _build_graphiti_instance(config: dict[str, Any]):
 
 
 async def _ingest_async(root: pathlib.Path, config: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    from datetime import datetime, timezone
+
     graphiti = await _build_graphiti_instance(config)
     init_state = _load_engine_state(root, config)
     try:
@@ -184,13 +186,22 @@ async def _ingest_async(root: pathlib.Path, config: dict[str, Any], payload: dic
         except Exception:
             source_value = payload.get("source", "text")
 
+        created_at = payload.get("created_at")
+        if isinstance(created_at, str):
+            try:
+                reference_time = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            except ValueError:
+                reference_time = datetime.now(timezone.utc)
+        else:
+            reference_time = datetime.now(timezone.utc)
+
         result = await graphiti.add_episode(
             name=payload["name"],
             episode_body=payload["episode_body"],
             source=source_value,
             source_description=payload.get("source_description", "Claude Code memory checkpoint"),
+            reference_time=reference_time,
             group_id=payload["storage_group_id"],
-            uuid=payload["payload_id"],
         )
         return {
             "mode": "graphiti-core",

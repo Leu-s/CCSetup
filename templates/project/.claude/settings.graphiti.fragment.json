@@ -1,7 +1,7 @@
 {
   "autoMemoryEnabled": false,
   "extraKnownMarketplaces": {
-    "ecc": {
+    "everything-claude-code": {
       "source": {
         "source": "github",
         "repo": "affaan-m/everything-claude-code"
@@ -21,7 +21,7 @@
     }
   },
   "enabledPlugins": {
-    "ecc@ecc": true,
+    "everything-claude-code@everything-claude-code": true,
     "context-mode@context-mode": true,
     "ui-ux-pro-max@ui-ux-pro-max-skill": true
   },

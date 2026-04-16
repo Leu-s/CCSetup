@@ -103,11 +103,11 @@ class BootstrapHygieneTests(unittest.TestCase):
             self.assertIn("/usr/local/bin/custom-session-start.sh", commands)
             self.assertEqual(sum("session_start.py" in command for command in commands), 1)
             self.assertFalse(settings["autoMemoryEnabled"])
-            self.assertTrue(settings["enabledPlugins"]["ecc@ecc"])
+            self.assertTrue(settings["enabledPlugins"]["everything-claude-code@everything-claude-code"])
             self.assertTrue(settings["enabledPlugins"]["context-mode@context-mode"])
             self.assertTrue(settings["enabledPlugins"]["ui-ux-pro-max@ui-ux-pro-max-skill"])
             self.assertEqual(
-                settings["extraKnownMarketplaces"]["ecc"]["source"]["repo"],
+                settings["extraKnownMarketplaces"]["everything-claude-code"]["source"]["repo"],
                 "affaan-m/everything-claude-code",
             )
 

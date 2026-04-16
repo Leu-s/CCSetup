@@ -13,13 +13,13 @@ from typing import Any
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 REQUIRED_MARKETPLACES: dict[str, str] = {
-    "ecc": "affaan-m/everything-claude-code",
+    "everything-claude-code": "affaan-m/everything-claude-code",
     "context-mode": "mksglu/context-mode",
     "ui-ux-pro-max-skill": "nextlevelbuilder/ui-ux-pro-max-skill",
 }
 
 REQUIRED_ENABLED_PLUGINS: tuple[str, ...] = (
-    "ecc@ecc",
+    "everything-claude-code@everything-claude-code",
     "context-mode@context-mode",
     "ui-ux-pro-max@ui-ux-pro-max-skill",
 )

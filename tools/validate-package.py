@@ -170,7 +170,7 @@ def _project_settings_declare_reproducible_plugins(root: pathlib.Path) -> bool:
     return all(
         probe in settings_text
         for probe in [
-            '"ecc@ecc": true',
+            '"everything-claude-code@everything-claude-code": true',
             '"context-mode@context-mode": true',
             '"ui-ux-pro-max@ui-ux-pro-max-skill": true',
             'affaan-m/everything-claude-code',

@@ -84,7 +84,7 @@ A ready-made shape is in `ops/examples/mcp.graphiti.remote-headers-helper.exampl
 ## 11. Cron flush on macOS does not deliver episodes
 
 Symptom:
-- `~/.claude/state/cron-flush.log` shows access errors or is completely empty, even though `crontab -l` contains the schedule;
+- `~/.claude/logs/graphiti-flush-cron.log` shows access errors or is completely empty, even though `crontab -l` contains the schedule;
 - `./tools/graphiti_admin.py status <repo>` reports that pending episodes do not decrease between ticks;
 - manual `./tools/graphiti_admin.py flush <repo>` from the shell works correctly.
 
@@ -99,14 +99,14 @@ Fix:
 
 Verification:
 - `crontab -l` shows the expected schedule pointing to `~/.claude/hooks/graphiti-flush-cron.sh`;
-- `tail -f ~/.claude/state/cron-flush.log` on the next tick shows successful flush summaries (one entry per run, no `Permission denied`);
+- `tail -f ~/.claude/logs/graphiti-flush-cron.log` on the next tick shows successful flush summaries (one entry per run, no `Permission denied`);
 - `./tools/graphiti_admin.py status <repo>` starts showing a decreasing pending count and a fresh `lastFlush`.
 
 ## 12. Stop hook does not trigger async flush
 
 Symptom:
 - the queue / spool gradually accumulates payloads after sessions;
-- the expected async flush after the `Stop` hook did not run (no fresh entry in `~/.claude/state/cron-flush.log` or in `graphiti-hooks.jsonl`);
+- the expected async flush after the `Stop` hook did not run (no fresh entry in `~/.claude/logs/graphiti-flush-cron.log` or in `graphiti-hooks.jsonl`);
 - manual `graphiti_admin.py flush <repo>` successfully delivers what accumulated.
 
 Check:

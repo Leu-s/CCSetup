@@ -63,9 +63,9 @@ ENV_FILE="${GRAPHITI_CRON_ENV_FILE:-$HOME/.claude/graphiti.neo4j.env}"
 # 3. Repo list, one absolute path per line; # comments and blank lines are ignored.
 REPOS_LIST="${GRAPHITI_CRON_REPOS_LIST:-$HOME/.claude/hooks/graphiti-flush-repos.list}"
 
-# 4. Cron-specific log in a stable state directory.
-LOG_DIR="${GRAPHITI_CRON_LOG_DIR:-$HOME/.claude/state}"
-LOG_FILE="$LOG_DIR/cron-flush.log"
+# 4. Cron-specific log in a stable directory separate from runtime state.
+LOG_DIR="${GRAPHITI_CRON_LOG_DIR:-$HOME/.claude/logs}"
+LOG_FILE="$LOG_DIR/graphiti-flush-cron.log"
 mkdir -p "$LOG_DIR"
 
 # Load env (chmod 600).
@@ -92,7 +92,7 @@ What it does:
 - loads env from `~/.claude/graphiti.neo4j.env` (chmod 600, containing `OPENAI_API_KEY`, `NEO4J_PASSWORD`, `NEO4J_URI`, and optionally `GOOGLE_API_KEY`);
 - iterates the repo list from `~/.claude/hooks/graphiti-flush-repos.list` (one absolute path per line, `#` comments and empty lines are skipped);
 - runs `./tools/graphiti_admin.py flush <repo> --limit 50` for each repo;
-- writes a per-run log to `~/.claude/state/cron-flush.log` (stdout+stderr per repo).
+- writes a per-run log to `~/.claude/logs/graphiti-flush-cron.log` (stdout+stderr per repo).
 
 Example contents of `~/.claude/hooks/graphiti-flush-repos.list`:
 
@@ -105,8 +105,10 @@ Example contents of `~/.claude/hooks/graphiti-flush-repos.list`:
 Example crontab (every 15 minutes):
 
 ```cron
-*/15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh >> ~/.claude/state/cron-flush.log 2>&1
+*/15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh
 ```
+
+The wrapper writes to its own log file internally; the crontab entry does not need `>> ... 2>&1`.
 
 Permissions and order:
 - `chmod +x ~/.claude/hooks/graphiti-flush-cron.sh`;
@@ -124,7 +126,7 @@ How to enable FDA for cron:
 3. toggle `cron` on;
 4. if you edit crontab via `crontab -e`, the terminal (Terminal.app / iTerm) must also be in FDA — otherwise the edit will save, but execution will not see protected paths.
 
-Verification: after the first cron fire, the log `~/.claude/state/cron-flush.log` should contain a `flush <repo>` line and should not contain `Permission denied` / `Operation not permitted`.
+Verification: after the first cron fire, the log `~/.claude/logs/graphiti-flush-cron.log` should contain a `flush <repo>` line and should not contain `Permission denied` / `Operation not permitted`.
 
 ### 5.4 Async flush via `Stop` hook
 
@@ -135,7 +137,7 @@ An alternative to cron/systemd for latency-sensitive setups is `queue.asyncFlush
 The package does not mandate a specific scheduler. Two supported paths:
 
 - **Linux / WSL via systemd** — templates in `ops/systemd/` (`graphiti-flush@.service` + `graphiti-flush@.timer`, 2-minute interval).
-- **Cross-platform via cron** — wrapper at `~/.claude/hooks/graphiti-flush-cron.sh` (shape above) that loads `~/.claude/graphiti.neo4j.env`, iterates `~/.claude/hooks/graphiti-flush-repos.list`, runs `./tools/graphiti_admin.py flush <repo> --limit 50` per entry, and logs to `~/.claude/state/cron-flush.log`. Sample crontab: `*/15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh >> ~/.claude/state/cron-flush.log 2>&1`.
+- **Cross-platform via cron** — wrapper at `~/.claude/hooks/graphiti-flush-cron.sh` (shape above) that loads `~/.claude/graphiti.neo4j.env`, iterates `~/.claude/hooks/graphiti-flush-repos.list`, runs `./tools/graphiti_admin.py flush <repo> --limit 50` per entry, and logs to `~/.claude/logs/graphiti-flush-cron.log`. Sample crontab: `*/15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh` (the wrapper logs internally to `~/.claude/logs/graphiti-flush-cron.log`).
 
 On macOS, `/usr/sbin/cron` must be granted Full Disk Access via `System Settings → Privacy & Security → Full Disk Access`. Without FDA, the cron process runs but cannot read protected paths (env file, repos list, `.claude/state/**`), and flushes fail silently. The terminal app used to edit crontab should also have FDA.
 

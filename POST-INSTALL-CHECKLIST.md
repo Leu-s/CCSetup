@@ -31,14 +31,17 @@ See [INSTALL.md](INSTALL.md) §3.5 for the removal procedure.
 ./tools/graphiti_admin.py status <repo>
 ```
 
-Expected:
-- `MEMORY_GROUP_ID` and `GRAPHITI_STORAGE_GROUP_ID` are both populated
-- `GRAPHITI_STORAGE_GROUP_ID` matches the deterministic `g_<slug>_<hash>` shape
-- queue/ledger/archive/dead-letter counters are present (counts may all be zero on a freshly bootstrapped repo)
-- the runtime stamp file exists under `.claude/state/`
+Expected fields in the returned JSON:
+- `group.logical_group_id` matches the `--logical-group-id` passed to `install-graphiti-stack.sh`
+- `group.storage_group_id` matches the deterministic `g_<slug>_<hash>` shape
+- `group.storage_mismatch: false` and `group.expected_storage_group_id == storage_group_id`
+- `queue.spool` / `queue.archive` / `queue.dead_letter` counters present (may all be `0` on a freshly bootstrapped repo)
+- `ledger.exists: true`
+- `mcp.project_mcp_approval_verifiable_here: false` — correct for CLI context; approval state is only verifiable inside Claude Code
+- `.claude/state/graphiti-runtime-stamp.json` exists on disk
 
 Common failures:
-- `GRAPHITI_STORAGE_GROUP_ID` missing or mismatched — `./tools/graphiti_admin.py migrate-logical-id <repo> --mode keep-storage` (or `--mode new-storage` if you want a fresh namespace). See [GROUP-ID-POLICY.md](GROUP-ID-POLICY.md).
+- `group.storage_mismatch: true` — `./tools/graphiti_admin.py migrate-logical-id <repo> --mode keep-storage` (or `--mode new-storage` for a fresh namespace). See [GROUP-ID-POLICY.md](GROUP-ID-POLICY.md).
 - runtime stamp absent — re-run `./tools/install-hook-runtime.sh <repo>`.
 
 ## 3. Memory pipeline — `doctor`
@@ -47,17 +50,18 @@ Common failures:
 ./tools/graphiti_admin.py doctor <repo>
 ```
 
-Expected:
-- `direct_ingest.ready: true` — `graphiti_core` can write to Neo4j directly
+Expected fields in the returned JSON:
+- `ok: true` with empty `errors` array
+- `direct_ingest.ready: true` and `direct_ingest.missing_env: []` — `graphiti_core` can write to Neo4j directly from the host runtime
 - `mcp_http_health.ok: true` — the Graphiti MCP HTTP server answers on `http://127.0.0.1:8000/health`
-- `codebase_memory.entry_present: true` and the resolved binary path exists
-- `project_mcp_approval_verifiable_here: false` — this is **correct** for CLI context; approval state is only verifiable inside Claude Code itself
+- `codebase_memory.present: true` and `codebase_memory.resolvable: true` — the `.mcp.json` entry exists and the binary resolves on PATH or via `CODEBASE_MEMORY_MCP_BIN`
+- `runtime` block shows the dedicated Python venv is present
 
 Common failures:
-- `direct_ingest.ready: false` with "OPENAI_API_KEY missing" — check `~/.claude/graphiti.neo4j.env`, re-run the shell export block from [INSTALL.md](INSTALL.md) §8 in the terminal where you invoke the admin CLI.
-- `mcp_http_health.ok: false` — the Graphiti MCP container is not up. `cd ops && docker compose -f docker-compose.graphiti-neo4j.yml ps` to check; `docker compose ... up -d` to bring it up; tail `docker compose ... logs graphiti-mcp` for causes.
-- `codebase_memory.entry_present: false` — the `.mcp.json` entry is missing. Re-run `./tools/install-graphiti-stack.sh <repo>` (idempotent) or add the entry manually from the fragment template.
-- `codebase_memory.binary_resolves: false` — the binary is not on `PATH` and `CODEBASE_MEMORY_MCP_BIN` is unset. `export CODEBASE_MEMORY_MCP_BIN="/absolute/path/to/codebase-memory-mcp"` and retry.
+- `direct_ingest.ready: false` with `direct_ingest.missing_env: ["OPENAI_API_KEY", ...]` — check `~/.claude/graphiti.neo4j.env`, then re-run the `set -a; . ~/.claude/graphiti.neo4j.env; set +a` block from [INSTALL.md](INSTALL.md) §8 in the terminal where you invoke the admin CLI. The host runtime reads from the process environment, not from the repo.
+- `mcp_http_health.ok: false` — the Graphiti MCP container is not up. `cd ops && docker compose -f docker-compose.graphiti-neo4j.yml ps` to check; `docker compose ... up -d` to bring it up; tail `docker compose ... logs graphiti-mcp` for root cause.
+- `codebase_memory.present: false` — the `.mcp.json` entry is missing. Re-run `./tools/install-graphiti-stack.sh <repo>` (idempotent) or add the entry manually from the fragment template.
+- `codebase_memory.resolvable: false` — the binary is not on `PATH` and `CODEBASE_MEMORY_MCP_BIN` is unset. `export CODEBASE_MEMORY_MCP_BIN="/absolute/path/to/codebase-memory-mcp"` and retry.
 
 ## 4. Smoke-test delivery — `flush --limit 1`
 
@@ -124,7 +128,7 @@ Expected: `active (waiting)`.
 
 If you enabled cron, verify after one schedule window:
 ```bash
-tail -n 20 ~/.claude/state/cron-flush.log
+tail -n 20 ~/.claude/logs/graphiti-flush-cron.log
 ```
 Expected: at least one `flush <repo>` line from the scheduled run, no `Permission denied` / `Operation not permitted`.
 

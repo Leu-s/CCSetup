@@ -44,6 +44,9 @@ Edit `~/.claude/settings.json`:
   "showThinkingSummaries": true,
   "disableSkillShellExecution": true,
   "cleanupPeriodDays": 14,
+  "permissions": {
+    "deny": ["mcp__memory"]
+  },
   "disabledMcpjsonServers": ["memory"],
   "env": {
     "API_TIMEOUT_MS": "600000",
@@ -59,7 +62,8 @@ Keys used here:
 - `showThinkingSummaries` — expose extended-thinking summaries in the UI.
 - `disableSkillShellExecution` — must be a **boolean**, not a string; disables auto-run of shell snippets emitted by skills.
 - `cleanupPeriodDays` — how long Claude Code keeps session logs before cleanup.
-- `disabledMcpjsonServers: ["memory"]` — belt-and-suspenders reject on the ECC `memory` MCP if it lands in any `.mcp.json` Claude Code reads (see §3.5). Catches re-registration after plugin updates.
+- `permissions.deny: ["mcp__memory"]` — blocks tool calls against any `memory` MCP server, including ECC's plugin-scope one which cannot be removed without uninstalling the ECC plugin.
+- `disabledMcpjsonServers: ["memory"]` — a complementary barrier that rejects any `memory` server declared in `.mcp.json`, catching project-scope or future re-registration.
 - `API_TIMEOUT_MS` / `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` — raise default timeouts for long-running MCP calls and bash tasks.
 - `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` — opt out of optional telemetry.
 
@@ -159,9 +163,18 @@ claude mcp remove memory
 claude mcp list | grep -i memory   # should now show no `memory` server
 ```
 
-Two barriers catch this condition:
-- `claude mcp remove memory` unregisters the server from the CLI for the current scope.
-- `disabledMcpjsonServers: ["memory"]` in `~/.claude/settings.json` (see §1.5) rejects the server if it is re-registered via any `.mcp.json` Claude Code reads — a plugin update, an ECC reinstall, or a future bootstrap that inadvertently writes it.
+ECC registers its `memory` server at **plugin scope**, which cannot be removed via `claude mcp remove` without uninstalling the ECC plugin entirely. Three barriers catch the condition at different layers:
+
+1. `permissions.deny: ["mcp__memory"]` in `~/.claude/settings.json` (§1.5) blocks every tool call against the `memory` server by tool-name prefix, including ECC's plugin-scope one. This is the only barrier that applies while ECC is installed. The server connection may still appear in `/mcp` output, but its tools will refuse to run.
+2. `disabledMcpjsonServers: ["memory"]` in `~/.claude/settings.json` (§1.5) rejects any `memory` server declared in a `.mcp.json` — project or user — so a plugin update, an ECC reinstall, or a future bootstrap cannot sneak it in through that path.
+3. `claude mcp remove memory` cleans up user-scope or project-scope `memory` entries if they exist (it does not affect plugin-scope). Run it once to catch any leftover entry from before the baseline was established:
+   ```bash
+   claude mcp remove memory --scope user 2>/dev/null || true
+   claude mcp remove memory --scope project 2>/dev/null || true
+   claude mcp list | grep -i 'memory'
+   # Expected: only `plugin:everything-claude-code:memory` remains, and it is
+   # neutralized by step 1 above.
+   ```
 
 Running two long-term memory backends at once produces split state and drifting recall across sessions — `baseline-doctor` flags this condition as `graphiti_overlap_mcps_in_repo` (error) or `graphiti_overlap_mcps_in_user_scope` / `graphiti_overlap_mcps_from_plugins` (warnings).
 
@@ -384,7 +397,7 @@ Grant FDA:
 3. toggle it on;
 4. also add the terminal app used to edit crontab (Terminal.app / iTerm), otherwise the edit saves but execution still cannot see protected paths.
 
-Verify: after the first scheduled fire, `~/.claude/state/cron-flush.log` should contain a `flush <repo>` line and no `Permission denied` / `Operation not permitted` messages.
+Verify: after the first scheduled fire, `~/.claude/logs/graphiti-flush-cron.log` should contain a `flush <repo>` line and no `Permission denied` / `Operation not permitted` messages.
 
 ## 10. Check install state
 

@@ -31,9 +31,9 @@ Required:
 - Docker + Docker Compose for the live Graphiti backend
 - Node.js / `npx` for `repomix`, `ccusage` and the plugin ecosystem
 
-## 1.5 Recommended baseline user settings (optional, reduces friction)
+## 1.5 Baseline user settings (required)
 
-These are operator-level, not repo-level — they affect Claude Code across every project, not just the bootstrapped repo. You can skip this section; the install works without it. It is listed here because setting these once upfront removes a class of avoidable errors later.
+These are operator-level, not repo-level — they affect Claude Code across every project, not just the bootstrapped repo. Skipping this section means hitting a class of avoidable errors later (wrong timeouts, shell exec in skills, ECC `memory` MCP sneaking back in after a plugin update), so it is part of the baseline install.
 
 Edit `~/.claude/settings.json`:
 
@@ -124,10 +124,9 @@ claude plugin install ui-ux-pro-max@ui-ux-pro-max-skill
 
 **After §3.2 or §3.2a: jump to §3.5 to disable the ECC `memory` MCP before continuing.** ECC registers it during plugin install; if you move on through §3.3–§3.4 without disabling it, you bootstrap a repo with two live memory backends.
 
-### 3.3 ECC rules — a separate required step if you want the full ECC rules surface
-The current ECC limitation is this: plugin install does not distribute `rules` automatically. For the full ECC rules surface, take one of the two paths.
+### 3.3 ECC rules (required)
+ECC's plugin install does not auto-distribute `rules` — that surface lives separately in the ECC repo and must be installed with ECC's own installer. Run it once per machine:
 
-The most reliable one:
 ```bash
 git clone https://github.com/affaan-m/everything-claude-code.git ~/data/everything-claude-code
 cd ~/data/everything-claude-code
@@ -135,7 +134,7 @@ npm install
 ./install.sh --profile full
 ```
 
-The alternative is to copy `rules/common` and the language directories you need into `~/.claude/rules/` or into the project `.claude/rules/`.
+After this, `baseline-doctor` (step §10) treats the rules surface as present. If you deliberately want a narrower rules set, copy `rules/common` plus the language directories you need into `~/.claude/rules/` or into the project `.claude/rules/` instead of running `--profile full`; skipping rules entirely is not a supported configuration for this framework.
 
 ### 3.4 Local operator utilities
 ```bash
@@ -166,29 +165,24 @@ Two barriers catch this condition:
 
 Running two long-term memory backends at once produces split state and drifting recall across sessions — `baseline-doctor` flags this condition as `graphiti_overlap_mcps_in_repo` (error) or `graphiti_overlap_mcps_in_user_scope` / `graphiti_overlap_mcps_from_plugins` (warnings).
 
-### 3.6 User-scope MCPs (optional)
+### 3.6 Adding user-scope MCPs
 
-Some MCPs belong at the operator level — available in every project, not only the bootstrapped one. Examples: `exa` for web research, a user-wide GitHub token.
+Once §3.2 is done, ECC already provides these MCPs at plugin scope: `github`, `context7`, `sequential-thinking`, `exa`, `playwright`. You do not need to re-add them.
 
-Prefer header-based auth when the server supports it, so the API key does not end up in URLs, process listings (`ps`), or `claude mcp list` output:
-
-```bash
-read -rs -p "EXA_API_KEY: " EXA_API_KEY && export EXA_API_KEY
-claude mcp add --scope user --transport http exa \
-  https://mcp.exa.ai/mcp \
-  --header "x-api-key: ${EXA_API_KEY}"
-```
-
-If the server only accepts URL-embedded auth, redact the key before sharing any `claude mcp list` output or screenshots — the URL form is visible to anyone who inspects the user-scope MCP state:
+This section is for the case where you want to add a different MCP at user scope (available in every project) or override an ECC-provided one with your own credentials. Example shape for an HTTP MCP with header auth:
 
 ```bash
-claude mcp add --scope user --transport http exa \
-  "https://mcp.exa.ai/mcp?exaApiKey=${EXA_API_KEY}"
+read -rs -p "API_KEY: " MCP_API_KEY && export MCP_API_KEY
+claude mcp add --scope user --transport http <name> \
+  https://example.invalid/mcp \
+  --header "x-api-key: ${MCP_API_KEY}"
 ```
 
-Using `read -rs` instead of pasting `export EXA_API_KEY="..."` keeps the key out of your shell history (`~/.bash_history`, `~/.zsh_history`) even if `HISTCONTROL` is not configured.
+Prefer header-based auth when the server supports it, so the key does not end up in URLs, process listings (`ps`), or `claude mcp list` output. If the server only accepts URL-embedded auth (`?apiKey=...`), redact the key before sharing any output or screenshots — the URL form is visible to anyone who inspects the user-scope MCP state.
 
-Scope precedence in Claude Code is **local > project > user > plugin**. Keep each MCP at exactly one scope — multiple scopes cause conflicting approvals and split state.
+Using `read -rs` instead of pasting `export KEY="..."` keeps the key out of your shell history (`~/.bash_history`, `~/.zsh_history`) even if `HISTCONTROL` is not configured.
+
+Scope precedence in Claude Code is **local > project > user > plugin**. Keep each MCP at exactly one scope — multiple scopes cause conflicting approvals and split state. If you override an ECC-provided MCP at user scope, the user-scope entry wins; the plugin-scope entry is not disabled, but also not used.
 
 Do not add `graphiti-memory` or `codebase-memory-mcp` at user scope: they are intentionally project-scoped and live in the bootstrapped repo's `.mcp.json`, so that project approval is distinct per repo.
 
@@ -371,9 +365,9 @@ What bootstrap does:
 - configures `codebase-memory-mcp auto_index=true`;
 - runs the initial `index_repository`.
 
-## 9.5 Schedule flush (optional, recommended for long-running repos)
+## 9.5 Schedule flush (required)
 
-Graphiti delivery runs on every session `Stop` when `queue.asyncFlushOnStop=true` in `.claude/graphiti.json`, but a scheduled flush catches missed retries, offline intervals, and cold repos that have not had a session in a while. Pick one path:
+Async delivery on session `Stop` covers the happy path, but scheduled flush is the safety net that catches retries after network failures, flushes repos with no recent sessions, and ensures that a single Claude Code quit does not leave a spool undrained. Pick one path and wire it up:
 
 ### Linux / WSL via systemd
 Install user units from `ops/systemd/`. See [OPERATIONS.md](OPERATIONS.md) §5.1 for the `systemd-escape` / `systemctl --user enable` sequence.

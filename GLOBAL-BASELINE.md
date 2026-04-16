@@ -22,7 +22,7 @@ Consequence:
 - cloud sessions can pull in the plugin-portion baseline from the repo;
 - user-scoped plugin installs are no longer the only source of truth for the plugin layer.
 
-## 2. Optional user preinstall — for local-machine convenience
+## 2. User preinstall — first-open convenience for the local machine
 
 ### ECC
 ```text

@@ -111,9 +111,9 @@ Common failures:
 - hooks not listed — confirm `.claude/settings.json` contains the Graphiti fragment. `baseline-doctor` reports missing hook events as part of the repo contract check.
 - `/hooks` is empty immediately after editing settings — restart Claude Code. Settings load once per session start.
 
-## 7. Scheduled flush (if configured in INSTALL §9.5)
+## 7. Scheduled flush
 
-Skip to §8 if you did not schedule a flush.
+Scheduled flush is a required component of the install (see [INSTALL.md](INSTALL.md) §9.5). Verify it landed correctly:
 
 
 If you enabled systemd, verify:

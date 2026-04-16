@@ -301,6 +301,19 @@ Add to `~/.claude/settings.json` under `env` (see §1.5) or to your shell profil
 - `SERENA_USAGE_REPORTING=false` — opt out of the anonymous startup ping (added in v1.1.2).
 - `MCP_TIMEOUT=60000` — bumps the MCP connection timeout to 60s. First-session LSP cold starts for heavy languages (Swift, Kotlin) can exceed the default.
 
+### Global Serena config (required: disable dashboard auto-launch)
+
+Serena writes a global config to `~/.serena/serena_config.yml` on first run. One key there is load-bearing and must be flipped: `web_dashboard_open_on_launch` defaults to `true`, which pops a new browser tab every time Claude Code starts a Serena MCP process. Because Claude Code restarts Serena on `--project-from-cwd` switches, after compaction, on reload, and per-agent-team teammate spawn, this produces a constant stream of unsolicited browser windows (compounded by Serena's own acknowledged limitation of leaving orphaned processes on launch).
+
+Required edit in `~/.serena/serena_config.yml`:
+
+```yaml
+web_dashboard: true
+web_dashboard_open_on_launch: false
+```
+
+Dashboard stays available at `http://localhost:24282/dashboard/` (or the next free port 24283, 24284, … when multiple Serena instances run), but no browser tab is opened automatically. On macOS there is no system-tray icon, so the dashboard must be opened manually via the URL when you want it. If you never use the dashboard, `web_dashboard: false` disables it entirely.
+
 ### Per-project config (auto-created on first activation)
 
 On first Serena activation inside a repo, Serena writes `.serena/project.yml` (versioned) and may write `.serena/project.local.yml` (gitignored). If the auto-detected language set is wrong, edit `.serena/project.yml` to list the languages explicitly (`languages: [swift, typescript]`) and commit it.

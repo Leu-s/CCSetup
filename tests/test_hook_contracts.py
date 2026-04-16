@@ -6,6 +6,7 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -31,13 +32,17 @@ class HookContractTests(unittest.TestCase):
             text=True,
         )
 
+    def _link_runtime_python(self, repo: pathlib.Path) -> pathlib.Path:
+        runtime_python = repo / ".claude" / "state" / "graphiti-runtime" / "bin" / "python"
+        runtime_python.parent.mkdir(parents=True, exist_ok=True)
+        runtime_python.symlink_to(pathlib.Path(sys.executable))
+        return runtime_python
+
     def test_cwd_and_file_changed_export_runtime_and_watch_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = pathlib.Path(tmp) / "repo"
             self._bootstrap_repo(repo)
-            runtime_python = repo / ".claude" / "state" / "graphiti-runtime" / "bin" / "python"
-            runtime_python.parent.mkdir(parents=True, exist_ok=True)
-            runtime_python.symlink_to(pathlib.Path(sys.executable))
+            self._link_runtime_python(repo)
             env_file = repo / ".claude" / "state" / "session.env"
             env = os.environ.copy()
             env["CLAUDE_PROJECT_DIR"] = str(repo)
@@ -128,6 +133,91 @@ class HookContractTests(unittest.TestCase):
             last_flush = json.loads((repo / ".claude" / "state" / "graphiti-last-flush.json").read_text(encoding="utf-8"))
             self.assertTrue(last_flush["dry_run"])
             self.assertFalse(lock_path.exists())
+
+    def _install_flush_marker_stub(self, repo: pathlib.Path) -> pathlib.Path:
+        flush_script = repo / ".claude" / "hooks" / "graphiti_flush.py"
+        marker_path = repo / ".claude" / "state" / "async-flush-marker.txt"
+        stub = (
+            "#!/usr/bin/env python3\n"
+            "import os, pathlib, sys\n"
+            "marker = pathlib.Path(os.environ[\"CLAUDE_PROJECT_DIR\"]) / \".claude\" / \"state\" / \"async-flush-marker.txt\"\n"
+            "marker.parent.mkdir(parents=True, exist_ok=True)\n"
+            "marker.write_text(os.environ.get(\"GRAPHITI_ASYNC_FLUSH\", \"\"), encoding=\"utf-8\")\n"
+            "sys.exit(0)\n"
+        )
+        flush_script.write_text(stub, encoding="utf-8")
+        flush_script.chmod(0o755)
+        return marker_path
+
+    def _run_stop_hook(self, repo: pathlib.Path) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env["CLAUDE_PROJECT_DIR"] = str(repo)
+        return subprocess.run(
+            [str(repo / ".claude" / "hooks" / "run_python.sh"), "graphiti_stop.py"],
+            cwd=repo,
+            env=env,
+            input=json.dumps({
+                "hook_event_name": "Stop",
+                "stop_hook_active": False,
+                "last_assistant_message": "test",
+            }),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+    def test_stop_hook_does_not_spawn_async_flush_when_flag_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = pathlib.Path(tmp) / "repo"
+            self._bootstrap_repo(repo)
+            self._link_runtime_python(repo)
+            marker_path = self._install_flush_marker_stub(repo)
+
+            cfg_path = repo / ".claude" / "graphiti.json"
+            cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+            self.assertFalse(cfg["queue"]["asyncFlushOnStop"])
+
+            proc = self._run_stop_hook(repo)
+            self.assertEqual(proc.returncode, 0)
+
+            deadline = time.monotonic() + 1.0
+            while time.monotonic() < deadline:
+                if marker_path.exists():
+                    break
+                time.sleep(0.1)
+            self.assertFalse(
+                marker_path.exists(),
+                "async flush was spawned despite queue.asyncFlushOnStop=false",
+            )
+
+    def test_stop_hook_spawns_async_flush_when_flag_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = pathlib.Path(tmp) / "repo"
+            self._bootstrap_repo(repo)
+            self._link_runtime_python(repo)
+            marker_path = self._install_flush_marker_stub(repo)
+
+            cfg_path = repo / ".claude" / "graphiti.json"
+            cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+            cfg["queue"]["asyncFlushOnStop"] = True
+            cfg_path.write_text(
+                json.dumps(cfg, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            proc = self._run_stop_hook(repo)
+            self.assertEqual(proc.returncode, 0)
+
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                if marker_path.exists():
+                    break
+                time.sleep(0.1)
+            self.assertTrue(
+                marker_path.exists(),
+                "async flush was not spawned despite queue.asyncFlushOnStop=true",
+            )
+            self.assertEqual(marker_path.read_text(encoding="utf-8"), "1")
 
 
 if __name__ == "__main__":

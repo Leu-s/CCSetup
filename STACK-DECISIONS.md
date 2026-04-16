@@ -1,10 +1,10 @@
 # Stack decisions
 
-## Залишили в baseline
+## Kept in the baseline
 - ECC
-- Context7 через ECC
-- GitHub MCP через ECC
-- Sequential Thinking через ECC
+- Context7 via ECC
+- GitHub MCP via ECC
+- Sequential Thinking via ECC
 - context-mode
 - ui-ux-pro-max-skill
 - Graphiti
@@ -12,18 +12,18 @@
 - repomix
 - ccusage
 
-## Як розведені ролі
-- **ECC** — базовий Claude Code harness
-- **context-mode** — зменшення output bloat
-- **Graphiti** — довга пам’ять між сесіями
+## How roles are separated
+- **ECC** — the baseline Claude Code harness
+- **context-mode** — reduces output bloat
+- **Graphiti** — long-term memory across sessions
 - **codebase-memory-mcp** — structural code intelligence
 - **ui-ux-pro-max-skill** — design intelligence
-- **repomix** — snapshot/export repo
+- **repomix** — snapshot/export of the repo
 - **ccusage** — usage/cost observability
 
-## Що принципово не дублюємо
-- другий canonical memory engine
-- другий code-graph engine в core
-- другий behavior plugin поверх правил у `CLAUDE.md`
-- дубль ECC MCP entries у repo `.mcp.json`
-- дубль ECC hooks у repo settings
+## What we deliberately do not duplicate
+- a second canonical memory engine
+- a second code-graph engine in the core
+- another behavior plugin on top of the rules in `CLAUDE.md`
+- duplicate ECC MCP entries in the repo `.mcp.json`
+- duplicate ECC hooks in the repo settings

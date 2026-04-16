@@ -1,40 +1,40 @@
 # Hooks
 
-Цей документ описує **лише repo-owned hooks**, які ставить цей пакет.
+This document describes **only the repo-owned hooks** installed by this package.
 
-Важливо:
-- ECC має власні plugin/global hooks;
-- context-mode має власні plugin hooks;
-- цей пакет додає тільки **Graphiti memory lifecycle layer** на рівні repo.
+Important:
+- ECC has its own plugin/global hooks;
+- context-mode has its own plugin hooks;
+- this package only adds the **Graphiti memory lifecycle layer** at the repo level.
 
 ## 1. `InstructionsLoaded`
-- логування lifecycle-події;
-- підтримка runtime exports у консистентному стані.
+- logs the lifecycle event;
+- keeps runtime exports in a consistent state.
 
 ## 2. `SessionStart`
-- resolve logical/storage ids;
-- exports у `CLAUDE_ENV_FILE`;
-- local recall із delivered ledger;
-- короткий checkpoint у контекст.
+- resolves logical/storage ids;
+- exports to `CLAUDE_ENV_FILE`;
+- local recall from the delivered ledger;
+- brief checkpoint into context.
 
 ## 3. `CwdChanged`
-- оновлює watch paths;
-- синхронізує env exports.
+- updates watch paths;
+- synchronizes env exports.
 
 ## 4. `FileChanged`
-- реагує на зміну `CLAUDE.md`, `.mcp.json`, `.claude/settings*.json`, `.claude/graphiti.json`;
-- підтримує config awareness і exports.
+- reacts to changes in `CLAUDE.md`, `.mcp.json`, `.claude/settings*.json`, `.claude/graphiti.json`;
+- maintains config awareness and exports.
 
 ## 5. `PreCompact`
-- capture summary перед compaction;
-- пише payload у spool/ledger.
+- captures a summary before compaction;
+- writes the payload to spool/ledger.
 
 ## 6. `Stop`
-- capture summary після завершення відповіді;
-- не чекає live network ingest — pack завжди пише payload тільки у локальний spool + ledger;
-- додаткова опція `queue.asyncFlushOnStop` у `.claude/graphiti.json` керує тим, чи Stop також ініціює доставку в Neo4j:
-  - `false` (default) — Stop тільки spools, delivery окремо (cron / systemd / manual flush);
-  - `true` — Stop додатково спавнить detached flush subprocess (через `start_new_session=True`, з `GRAPHITI_ASYNC_FLUSH=1` у env), щоб доставка жила поза critical path завершення сесії і не блокувала повернення керування користувачу.
+- captures a summary after the response finishes;
+- does not wait on live network ingest — the pack always writes the payload only to the local spool + ledger;
+- the additional `queue.asyncFlushOnStop` option in `.claude/graphiti.json` controls whether Stop also initiates delivery to Neo4j:
+  - `false` (default) — Stop only spools, delivery happens separately (cron / systemd / manual flush);
+  - `true` — Stop additionally spawns a detached flush subprocess (via `start_new_session=True`, with `GRAPHITI_ASYNC_FLUSH=1` in env) so delivery lives off the session-end critical path and does not block handing control back to the user.
 
 ### 6.1 `Stop` (EN)
 - captures a session-end summary once the assistant turn finishes;
@@ -44,33 +44,33 @@
   - `true` — Stop additionally spawns a detached flush subprocess (via `start_new_session=True`, with `GRAPHITI_ASYNC_FLUSH=1` in the child env) so Neo4j delivery runs off the session-end critical path and does not block the user.
 
 ## 7. `ConfigChange`
-- блокує небажаний drift у package-managed project config.
+- blocks unwanted drift in package-managed project config.
 
 ## 8. `PostCompact`
-- capture короткий anchor одразу після того, як Claude стиснув контекст;
-- пише payload у spool/ledger, так само як `PreCompact`, але ПІСЛЯ compaction;
-- матчер `manual|auto` охоплює обидва типи compaction;
-- мета: зберегти continuity від compact-версії transcript-а, а не тільки від pre-compact snapshot.
+- captures a brief anchor immediately after Claude has compacted context;
+- writes the payload to spool/ledger the same way `PreCompact` does, but AFTER compaction;
+- the `manual|auto` matcher covers both compaction types;
+- goal: preserve continuity from the compacted version of the transcript, not only from the pre-compact snapshot.
 
 ## 9. `PostToolUseFailure`
-- capture tool-level failure як boundary-signal memory (timeout, permission denial, unreachable backend);
-- stdin payload містить `tool_name` і `tool_error`;
-- non-blocking; записує в queue для подальшого аналізу повторюваних frictions.
+- captures tool-level failure as boundary-signal memory (timeout, permission denial, unreachable backend);
+- the stdin payload contains `tool_name` and `tool_error`;
+- non-blocking; enqueues for later analysis of recurring frictions.
 
-## 10. Що hooks не роблять
-- не підміняють ECC hooks;
-- не підміняють context-mode hooks;
-- не запускають plugin installation flows;
-- не копіюють ECC/plugin hooks у repo config;
-- не керують глобальним Claude Code plugin state.
+## 10. What hooks do not do
+- do not replace ECC hooks;
+- do not replace context-mode hooks;
+- do not run plugin installation flows;
+- do not copy ECC/plugin hooks into repo config;
+- do not manage global Claude Code plugin state.
 
-## 11. Де живе `codebase-memory-mcp` first-run logic
+## 11. Where `codebase-memory-mcp` first-run logic lives
 
-Це більше не hook concern.
+This is no longer a hook concern.
 
-`codebase-memory-mcp` first-run activation тепер іде через install flow:
+`codebase-memory-mcp` first-run activation now goes through the install flow:
 - `tools/configure-codebase-memory.sh`
 - `config set auto_index true`
-- первинний `cli index_repository`
+- initial `cli index_repository`
 
-Тобто structural layer приводиться в готовий стан **до** першої нормальної Claude сесії, а не через repo hooks.
+In other words, the structural layer is brought to a ready state **before** the first normal Claude session, not via repo hooks.

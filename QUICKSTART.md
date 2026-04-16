@@ -1,10 +1,10 @@
 # Quickstart
 
-Це найкоротший робочий шлях для погодженого стеку.
+This is the shortest working path for the agreed stack.
 
-Якщо ти хочеш, щоб install робив Claude Code, а не ти вручну, спершу відкрий [TUTORIAL.md](TUTORIAL.md), а потім дай Claude Code інструкцію з розділу 4.
+If you want Claude Code to do the install instead of doing it by hand, first open [TUTORIAL.md](TUTORIAL.md) and then give Claude Code the instruction from section 4.
 
-## 1. Розпакуй пакет
+## 1. Unpack the package
 
 ```bash
 mkdir -p ~/data
@@ -12,47 +12,47 @@ unzip /path/to/downloaded-package.zip -d ~/data/
 cd ~/data/claude-code-framework-v7-ecosystem-final
 ```
 
-## 2. Підготуй retained baseline
+## 2. Prepare the retained baseline
 
 ### Plugin portion
-Repo все одно декларативно міститиме plugin layer через `.claude/settings.json`:
+The repo still declaratively carries the plugin layer via `.claude/settings.json`:
 - `everything-claude-code@everything-claude-code` (ECC bundle)
 - `context-mode@context-mode`
 - `ui-ux-pro-max@ui-ux-pro-max-skill`
 
-Warning: ECC bundle ships a `memory` MCP — **не використовуй його**. Graphiti є канонічним long-term memory layer у цьому фреймворку; rationale — в [USER-MANUAL.md](USER-MANUAL.md).
+Warning: the ECC bundle ships a `memory` MCP — **do not use it**. Graphiti is the canonical long-term memory layer in this framework; rationale is in [USER-MANUAL.md](USER-MANUAL.md).
 
 ### Local operator utilities
-Має бути доступно:
-- `repomix` або `npx`
-- `ccusage` або `npx`
+These must be available:
+- `repomix` or `npx`
+- `ccusage` or `npx`
 
-### Важлива межа ECC
-Repo-declared plugins не розносять ECC `rules` автоматично. Якщо хочеш повний ECC rules surface, один раз виконай upstream ECC install або скопіюй `rules/common` + потрібні мовні директорії. Деталі — в [INSTALL.md](INSTALL.md).
+### Important ECC boundary
+Repo-declared plugins do not distribute ECC `rules` automatically. If you want the full ECC rules surface, run the upstream ECC install once or copy `rules/common` + the language directories you need. Details are in [INSTALL.md](INSTALL.md).
 
-## 3. Постав `codebase-memory-mcp` binary без автоконфігурації
+## 3. Install the `codebase-memory-mcp` binary without auto-configuration
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DeusData/codebase-memory-mcp/main/install.sh | bash -s -- --skip-config
 ```
 
-Якщо binary не лежить у PATH, задай:
+If the binary is not on PATH, set:
 ```bash
 export CODEBASE_MEMORY_MCP_BIN="/absolute/path/to/codebase-memory-mcp"
 ```
 
-## 4. Підготуй Graphiti env
+## 4. Prepare the Graphiti env
 
 ```bash
 cp ops/env/graphiti.neo4j.env.example ~/.claude/graphiti.neo4j.env
 chmod 600 ~/.claude/graphiti.neo4j.env
 ```
 
-У `~/.claude/graphiti.neo4j.env` заповни мінімум:
-- `OPENAI_API_KEY` або `GOOGLE_API_KEY`
-- `NEO4J_PASSWORD`, якщо не хочеш demo default `demodemo`
+In `~/.claude/graphiti.neo4j.env`, fill in at minimum:
+- `OPENAI_API_KEY` or `GOOGLE_API_KEY`
+- `NEO4J_PASSWORD`, if you do not want the demo default `demodemo`
 
-## 5. Підніми Graphiti MCP + Neo4j
+## 5. Bring up Graphiti MCP + Neo4j
 
 ```bash
 cd ops
@@ -60,7 +60,7 @@ docker compose -f docker-compose.graphiti-neo4j.yml up -d
 cd ..
 ```
 
-## 6. Додай shell env для host runtime
+## 6. Add shell env for the host runtime
 
 ```bash
 export OPENAI_API_KEY="..."
@@ -71,7 +71,7 @@ export NEO4J_USER="neo4j"
 export NEO4J_PASSWORD="demodemo"
 ```
 
-## 7. Bootstrap repo
+## 7. Bootstrap the repo
 
 ```bash
 ./tools/install-graphiti-stack.sh /absolute/path/to/repo \
@@ -80,15 +80,15 @@ export NEO4J_PASSWORD="demodemo"
   --logical-group-id verbalium/mobile-app
 ```
 
-Що відбудеться автоматично:
-- bootstrap repo surfaces;
+What happens automatically:
+- repo surfaces are bootstrapped;
 - runtime install;
-- repo-declared plugin layer в `.claude/settings.json`;
-- `graphiti-memory` + `codebase-memory-mcp` у `.mcp.json`;
+- the repo-declared plugin layer lands in `.claude/settings.json`;
+- `graphiti-memory` + `codebase-memory-mcp` land in `.mcp.json`;
 - `codebase-memory-mcp config set auto_index true`;
-- первинний `codebase-memory-mcp cli index_repository` для цього repo.
+- an initial `codebase-memory-mcp cli index_repository` for this repo.
 
-## 8. Перевір state
+## 8. Check state
 
 ```bash
 ./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo
@@ -96,53 +96,53 @@ export NEO4J_PASSWORD="demodemo"
 ./tools/graphiti_admin.py doctor /absolute/path/to/repo
 ```
 
-Очікування:
-- `.claude/settings.json` містить `extraKnownMarketplaces` + `enabledPlugins` для retained baseline;
-- `.mcp.json` містить `graphiti-memory` і `codebase-memory-mcp`;
-- `CLAUDE.md` містить working principles і memory ids;
-- `.claude/settings.json` містить Graphiti hook events;
-- runtime stamp існує;
-- `doctor.direct_ingest.ready` дорівнює `true`.
+Expected:
+- `.claude/settings.json` contains `extraKnownMarketplaces` + `enabledPlugins` for the retained baseline;
+- `.mcp.json` contains `graphiti-memory` and `codebase-memory-mcp`;
+- `CLAUDE.md` contains working principles and memory ids;
+- `.claude/settings.json` contains the Graphiti hook events;
+- the runtime stamp exists;
+- `doctor.direct_ingest.ready` equals `true`.
 
-## 9. Відкрий repo у Claude Code
+## 9. Open the repo in Claude Code
 
-У Claude Code треба:
-1. відкрити корінь repo;
-2. переконатися, що Claude бачить repo `.claude/settings.json` і `.mcp.json`;
-3. погодити marketplace/plugin prompts, якщо Claude їх показує;
-4. погодити project MCP servers, якщо approvals увімкнені;
-5. виконати `/reload-plugins`, якщо щойно ставив plugins у live session.
+In Claude Code you need to:
+1. open the repo root;
+2. make sure Claude sees the repo `.claude/settings.json` and `.mcp.json`;
+3. accept marketplace/plugin prompts if Claude shows them;
+4. approve project MCP servers if approvals are enabled;
+5. run `/reload-plugins` if you just installed plugins in a live session.
 
-Після цього:
-- ECC дає базовий harness;
-- context-mode зменшує шум від MCP output;
-- `SessionStart` дає локальний memory checkpoint;
-- `Stop` і `PreCompact` capture-ять summaries в queue;
-- `codebase-memory-mcp` уже має `auto_index=true` і первинний index;
-- Graphiti MCP tools доступні для ручного recall/search.
+After that:
+- ECC provides the baseline harness;
+- context-mode cuts down noise from MCP output;
+- `SessionStart` provides a local memory checkpoint;
+- `Stop` and `PreCompact` capture summaries into the queue;
+- `codebase-memory-mcp` already has `auto_index=true` and an initial index;
+- Graphiti MCP tools are available for manual recall/search.
 
-Примітка: перший plugin install і перший `npx` запуск можуть вимагати мережу, якщо локальні cache ще порожні.
+Note: the first plugin install and the first `npx` run may require the network if local caches are still empty.
 
 
-## 10. Що сказати Claude Code після першого відкриття repo
+## 10. What to tell Claude Code after the first open of the repo
 
-Після того як repo відкритий у Claude Code, найзручніше дати одну з таких інструкцій.
+Once the repo is open in Claude Code, the most convenient thing is to give one of these instructions.
 
-### Зібрати контекст і почати працювати
+### Gather context and start working
 
 ```text
-Перевір baseline-doctor, status і doctor для цього repo.
-Поясни мені коротко результат, а потім почни працювати, використовуючи codebase-memory-mcp для структури коду, Graphiti для continuity і Context7 для актуальної документації.
+Check baseline-doctor, status and doctor for this repo.
+Explain the result to me briefly, then start working, using codebase-memory-mcp for code structure, Graphiti for continuity and Context7 for up-to-date documentation.
 ```
 
-### Продовжити попередню роботу
+### Continue previous work
 
 ```text
-Спершу підхопи memory checkpoint цього repo, перевір Graphiti continuity і структурний стан коду, а потім продовжуй задачу.
+First pick up the memory checkpoint of this repo, check Graphiti continuity and the structural state of the code, then continue the task.
 ```
 
-### Пояснити, що вже встановлено
+### Explain what is already installed
 
 ```text
-Поясни мені простими словами, що в цьому repo робить baseline, що додає overlay, які hooks активні і що автоматизовано без моєї участі.
+Explain to me in plain terms what the baseline does in this repo, what the overlay adds, which hooks are active and what is automated without my involvement.
 ```

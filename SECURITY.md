@@ -1,70 +1,70 @@
 # Security
 
-## 1. Основний принцип
+## 1. Core principle
 
-Package задуманий як **localhost-first** memory stack.
-Це тепер збігається і з документацією, і з shipped Compose defaults:
-- published ports bind-яться до `127.0.0.1` за замовчуванням;
-- remote exposure треба робити свідомо.
+The package is designed as a **localhost-first** memory stack.
+This now matches both the documentation and the shipped Compose defaults:
+- published ports bind to `127.0.0.1` by default;
+- remote exposure must be an explicit, deliberate choice.
 
-## 2. Secrets мають жити в user env
+## 2. Secrets must live in user env
 
-Не коміть у repo:
+Do not commit to the repo:
 - `OPENAI_API_KEY`
 - `GOOGLE_API_KEY`
 - `NEO4J_PASSWORD`
-- bearer tokens для remote MCP
-- локальні `.env` файли
+- bearer tokens for remote MCP
+- local `.env` files
 
-Repo surfaces мають містити shared config і env expansion, а не самі секрети.
+Repo surfaces should contain shared config and env expansion, not the secrets themselves.
 
-Canonical runtime env file живе поза repo: `~/.claude/graphiti.neo4j.env` (або `graphiti.falkordb.env`), `chmod 600`. Shipped Docker Compose стеки вантажать його через `${HOME}/.claude/graphiti.<backend>.env` з `required: false`, тому стек піднімається і без файлу (з env defaults), а реальні секрети ніколи не потрапляють у repo working tree.
+The canonical runtime env file lives outside the repo: `~/.claude/graphiti.neo4j.env` (or `graphiti.falkordb.env`), `chmod 600`. Shipped Docker Compose stacks load it via `${HOME}/.claude/graphiti.<backend>.env` with `required: false`, so the stack comes up even without the file (using env defaults), and real secrets never land in the repo working tree.
 
-## 3. Project-scoped MCP approvals — не обхідний шум, а захист
+## 3. Project-scoped MCP approvals — not bypass noise, actual protection
 
-`graphiti-memory` живе в repo `.mcp.json`.
-Це означає, що Claude Code застосовує model approval для project-scoped MCP servers.
-Не обманюй цю модель тим, що переносиш чутливий конфіг у shared файли без потреби.
+`graphiti-memory` lives in the repo `.mcp.json`.
+That means Claude Code applies model approval for project-scoped MCP servers.
+Do not cheat this model by moving sensitive config into shared files without reason.
 
 ## 4. Localhost template vs remote template
 
-### Локальний template
+### Local template
 `templates/project/.mcp.graphiti.fragment.json`
 
-Це simple localhost HTTP template.
-Він хороший для локального Graphiti stack на тій самій машині.
+This is a simple localhost HTTP template.
+It is a good fit for a local Graphiti stack on the same machine.
 
 ### Remote template
-Для remote path треба додати auth через `.mcp.json`:
+For the remote path you must add auth via `.mcp.json`:
 - `headers`
-- або `headersHelper`
+- or `headersHelper`
 
-Мінімальні приклади є в:
+Minimal examples are in:
 - `ops/examples/mcp.graphiti.remote-bearer.example.json`
 - `ops/examples/mcp.graphiti.remote-headers-helper.example.json`
 
 ## 5. Proxy example
 
-`ops/caddy/graphiti.Caddyfile` — це **local reverse-proxy example** без auth.
-Його не треба трактувати як готову production remote exposure конфігурацію.
+`ops/caddy/graphiti.Caddyfile` is a **local reverse-proxy example** without auth.
+Do not treat it as a production-ready remote exposure config.
 
-## 6. `.claude/state/` — чутливий локальний стан
+## 6. `.claude/state/` — sensitive local state
 
-Там лежать:
-- summaries минулих сесій
-- queued payload-и
-- dead-letter записи
+It holds:
+- summaries of past sessions
+- queued payloads
+- dead-letter records
 - runtime stamp
 - logs
 
-Тому:
-- не коміть це дерево
-- не синхронізуй його через git як shared team memory
-- не відкривай його Claude як звичайний knowledge corpus без політики доступу
+Therefore:
+- do not commit this tree
+- do not sync it via git as shared team memory
+- do not expose it to Claude as a regular knowledge corpus without an access policy
 
-## 7. Варто заборонити читання raw state tree Claude-ом
+## 7. You should deny Claude from reading the raw state tree
 
-У repo `.claude/settings.json` можна додати deny policy на кшталт:
+In the repo `.claude/settings.json` you can add a deny policy such as:
 
 ```json
 {
@@ -79,20 +79,20 @@ Canonical runtime env file живе поза repo: `~/.claude/graphiti.neo4j.env
 }
 ```
 
-## 8. Якщо все ж відкриваєш remote MCP зовні
+## 8. If you do expose remote MCP externally
 
-Тоді обовʼязкові:
+Then the following are mandatory:
 - auth
-- мережеве обмеження доступу
-- окремий пароль до Neo4j
-- окремий токен для MCP proxy
-- перевірка, що `.mcp.json` не містить hardcoded secrets
+- network-level access restriction
+- separate password for Neo4j
+- separate token for the MCP proxy
+- verification that `.mcp.json` contains no hardcoded secrets
 
 ## 9. Multi-user usage
 
-Shared repo config допустимий.
-Shared `.claude/state/` між кількома людьми через git — ні.
-Для команди розводь:
+Shared repo config is fine.
+Shared `.claude/state/` across multiple people via git is not.
+For a team, split:
 - shared repo config
 - local operator state
 - remote Graphiti backend

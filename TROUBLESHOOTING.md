@@ -1,116 +1,116 @@
 # Troubleshooting
 
-## 1. `baseline-doctor` каже, що repo plugin baseline не оголошений
+## 1. `baseline-doctor` says the repo plugin baseline is not declared
 
-Перевір:
-- чи bootstrap реально створив `.claude/settings.json`;
-- чи файл містить `extraKnownMarketplaces` і `enabledPlugins`;
-- чи repo не було перезаписано старим ручним config copy.
+Check:
+- whether bootstrap actually created `.claude/settings.json`;
+- whether the file contains `extraKnownMarketplaces` and `enabledPlugins`;
+- whether the repo was overwritten by an old manual config copy.
 
-## 2. `baseline-doctor` каже, що `.mcp.json` дублює ECC MCP-и
+## 2. `baseline-doctor` says `.mcp.json` duplicates ECC MCPs
 
-Прибери з repo `.mcp.json`:
+Remove from the repo `.mcp.json`:
 - `context7`
 - `github`
 - `sequential-thinking`
 
-Вони мають приходити через ECC.
+They must come via ECC.
 
-## 3. `doctor` каже, що `codebase-memory-mcp` відсутній або не резолвиться
+## 3. `doctor` says `codebase-memory-mcp` is missing or does not resolve
 
-Перевір:
-- чи binary встановлено;
-- чи `.mcp.json` містить `codebase-memory-mcp`;
-- чи задано `CODEBASE_MEMORY_MCP_BIN`, якщо binary не в PATH.
+Check:
+- whether the binary is installed;
+- whether `.mcp.json` contains `codebase-memory-mcp`;
+- whether `CODEBASE_MEMORY_MCP_BIN` is set if the binary is not on PATH.
 
-## 4. `codebase-memory-mcp` не готовий на першій сесії
+## 4. `codebase-memory-mcp` is not ready on the first session
 
-Перевір, чи install flow пройшов до кінця.
+Check that the install flow ran to completion.
 
-Пакет повинен був виконати:
+The package should have executed:
 ```bash
 codebase-memory-mcp config set auto_index true
 codebase-memory-mcp cli index_repository '{"repo_path":"/absolute/path/to/repo"}'
 ```
 
-За потреби повтори вручну:
+Repeat manually if needed:
 ```bash
 ./tools/configure-codebase-memory.sh /absolute/path/to/repo
 ```
 
-## 5. Context7 / GitHub MCP / Sequential Thinking не видно
+## 5. Context7 / GitHub MCP / Sequential Thinking are not visible
 
-Перевір:
-- чи встановлений ECC;
-- чи активний plugin `everything-claude-code@everything-claude-code`;
-- чи repo trusted і Claude Code підхопив repo-declared plugins;
-- чи не вимкнув ти ECC у user settings або managed settings.
+Check:
+- whether ECC is installed;
+- whether the `everything-claude-code@everything-claude-code` plugin is active;
+- whether the repo is trusted and Claude Code picked up the repo-declared plugins;
+- whether you disabled ECC in user settings or managed settings.
 
-## 6. Context-mode не працює
+## 6. Context-mode is not working
 
-У Claude Code:
+In Claude Code:
 ```text
 /context-mode:ctx-doctor
 ```
 
-Також перевір:
-- чи `context-mode@context-mode` enabled;
-- чи після інсталяції був `/reload-plugins`.
+Also check:
+- whether `context-mode@context-mode` is enabled;
+- whether you ran `/reload-plugins` after install.
 
-## 7. UI/UX skill не з’являється
+## 7. The UI/UX skill does not appear
 
-Перевір:
-- чи `ui-ux-pro-max@ui-ux-pro-max-skill` enabled;
-- чи після інсталяції був `/reload-plugins`.
+Check:
+- whether `ui-ux-pro-max@ui-ux-pro-max-skill` is enabled;
+- whether you ran `/reload-plugins` after install.
 
-## 8. Є duplicate hooks або дивні подвійні спрацювання
+## 8. There are duplicate hooks or strange double firings
 
-Не копіюй ECC plugin hooks вручну в repo `settings.json`.
+Do not copy ECC plugin hooks by hand into the repo `settings.json`.
 
-Repo hooks цього пакета повинні покривати тільки Graphiti lifecycle.
+The repo hooks of this package must cover only the Graphiti lifecycle.
 
-## 9. `doctor` каже, що Graphiti health ок, але ingest не ready
+## 9. `doctor` says Graphiti health is ok but ingest is not ready
 
-Це нормально можливо, бо:
-- MCP HTTP health і direct ingest — різні шари;
-- Graphiti HTTP server може бути reachable, а host runtime/env ще не готові.
+This is normally possible because:
+- MCP HTTP health and direct ingest are different layers;
+- the Graphiti HTTP server can be reachable while the host runtime/env is not yet ready.
 
 
-## 10. Потрібен remote MCP із short-lived auth
+## 10. You need a remote MCP with short-lived auth
 
-Використай `.mcp.json` з `headersHelper` замість hardcoded bearer header.
-Готовий shape є в `ops/examples/mcp.graphiti.remote-headers-helper.example.json`.
+Use `.mcp.json` with `headersHelper` instead of a hardcoded bearer header.
+A ready-made shape is in `ops/examples/mcp.graphiti.remote-headers-helper.example.json`.
 
-## 11. Cron flush на macOS не доставляє episodes
+## 11. Cron flush on macOS does not deliver episodes
 
-Симптом:
-- `~/.claude/state/cron-flush.log` показує access errors або зовсім порожній, хоча `crontab -l` містить schedule;
-- `./tools/graphiti_admin.py status <repo>` стверджує, що pending episodes не зменшуються між тиками;
-- manual `./tools/graphiti_admin.py flush <repo>` з shell працює коректно.
+Symptom:
+- `~/.claude/state/cron-flush.log` shows access errors or is completely empty, even though `crontab -l` contains the schedule;
+- `./tools/graphiti_admin.py status <repo>` reports that pending episodes do not decrease between ticks;
+- manual `./tools/graphiti_admin.py flush <repo>` from the shell works correctly.
 
 Root cause:
-- на macOS cron daemon (`/usr/sbin/cron`) за замовчуванням не має доступу до user data directories, bound-mounts і навіть до `~/.claude/state`. Без Full Disk Access (FDA) scheduled flushes тихо падають — файли hook wrapper-а або ledger просто недоступні для cron-процесу.
+- on macOS the cron daemon (`/usr/sbin/cron`) by default does not have access to user data directories, bind-mounts, and even `~/.claude/state`. Without Full Disk Access (FDA), scheduled flushes silently fail — hook wrapper files or the ledger are simply inaccessible to the cron process.
 
 Fix:
 1. System Settings → Privacy & Security → Full Disk Access.
-2. Натисни `+` і додай `/usr/sbin/cron` (Cmd+Shift+G у Finder, введи шлях, якщо binary не видно).
-3. Переконайся, що toggle поруч із `/usr/sbin/cron` увімкнений.
-4. Після зміни FDA macOS перезапустить cron автоматично; додаткової reload-команди не потрібно.
+2. Click `+` and add `/usr/sbin/cron` (Cmd+Shift+G in Finder, enter the path if the binary is not visible).
+3. Make sure the toggle next to `/usr/sbin/cron` is on.
+4. After the FDA change, macOS will restart cron automatically; no additional reload command is required.
 
 Verification:
-- `crontab -l` показує очікуваний schedule, що вказує на `~/.claude/hooks/graphiti-flush-cron.sh`;
-- `tail -f ~/.claude/state/cron-flush.log` на наступному тіку показує успішні flush summaries (entry per run, без `Permission denied`);
-- `./tools/graphiti_admin.py status <repo>` починає показувати спадний pending count і свіжий `lastFlush`.
+- `crontab -l` shows the expected schedule pointing to `~/.claude/hooks/graphiti-flush-cron.sh`;
+- `tail -f ~/.claude/state/cron-flush.log` on the next tick shows successful flush summaries (one entry per run, no `Permission denied`);
+- `./tools/graphiti_admin.py status <repo>` starts showing a decreasing pending count and a fresh `lastFlush`.
 
-## 12. Stop hook не запускає async flush
+## 12. Stop hook does not trigger async flush
 
-Симптом:
-- queue / spool поступово накопичує payloads після сесій;
-- очікуваний async flush після `Stop` hook не запускався (немає свіжого запису в `~/.claude/state/cron-flush.log` або в `graphiti-hooks.jsonl`);
-- manual `graphiti_admin.py flush <repo>` успішно доставляє те, що встигло назбиратися.
+Symptom:
+- the queue / spool gradually accumulates payloads after sessions;
+- the expected async flush after the `Stop` hook did not run (no fresh entry in `~/.claude/state/cron-flush.log` or in `graphiti-hooks.jsonl`);
+- manual `graphiti_admin.py flush <repo>` successfully delivers what accumulated.
 
-Перевір:
-1. У `.claude/graphiti.json` у секції `queue` виставлено `"asyncFlushOnStop": true`. За замовчуванням прапорець `false`, тому без явного увімкнення `Stop` hook лише enqueue-ує і повертає control — delivery лишається за cron або manual flush (див. `CONFIG-REFERENCE.md` §5.1).
-2. Hook runtime встановлений. `./tools/graphiti_admin.py doctor <repo>` має пройти; `.claude/state/graphiti-runtime/` повинен існувати з робочим Python.
-3. `runtime.pythonExecutable` (або `GRAPHITI_HOOK_PYTHON` env var) резолвиться у виконуваний Python, доступний із shell, що запускає Claude Code. Якщо він вказує на зламаний venv, detached subprocess exit-не миттєво і логів не лишить.
-4. Sandbox / shell environment Claude Code дозволяє detached child processes. У строго sandboxed shells (наприклад, корпоративні wrapper-и, деякі IDE integrations) `subprocess.Popen(..., start_new_session=True)` тихо блокується — у такому випадку покладайся на cron wrapper `~/.claude/hooks/graphiti-flush-cron.sh` замість async-on-stop.
+Check:
+1. In `.claude/graphiti.json`, the `queue` section has `"asyncFlushOnStop": true`. The flag defaults to `false`, so without explicit enablement the `Stop` hook only enqueues and returns control — delivery is left to cron or manual flush (see `CONFIG-REFERENCE.md` §5.1).
+2. The hook runtime is installed. `./tools/graphiti_admin.py doctor <repo>` should pass; `.claude/state/graphiti-runtime/` should exist with a working Python.
+3. `runtime.pythonExecutable` (or the `GRAPHITI_HOOK_PYTHON` env var) resolves to an executable Python available from the shell that launches Claude Code. If it points at a broken venv, the detached subprocess exits immediately and leaves no logs.
+4. The sandbox / shell environment of Claude Code allows detached child processes. In strictly sandboxed shells (for example, corporate wrappers, some IDE integrations) `subprocess.Popen(..., start_new_session=True)` is silently blocked — in that case rely on the cron wrapper `~/.claude/hooks/graphiti-flush-cron.sh` instead of async-on-stop.

@@ -1,12 +1,12 @@
 # Architecture
 
-## 1. Верхньорівнева модель
+## 1. High-level model
 
-Фреймворк має дві чіткі площини.
+The framework has two clear planes.
 
 ### A. Retained Claude Code baseline
 - ECC
-- Context7 / GitHub MCP / Sequential Thinking через ECC
+- Context7 / GitHub MCP / Sequential Thinking via ECC
 - context-mode
 - ui-ux-pro-max-skill
 - repomix
@@ -22,27 +22,27 @@
 - repo `.claude/settings.json`
 - repo `CLAUDE.md`
 
-## 2. Розподіл відповідальності
+## 2. Split of responsibility
 
 ### ECC
-Глобальний harness, не repo memory layer.
+The global harness, not a repo memory layer.
 
 ### context-mode
-Контекстна гігієна, не довга пам’ять і не code graph.
+Context hygiene, not long-term memory and not a code graph.
 
 ### Graphiti
-Канонічна довга пам’ять проекту.
+The canonical long-term memory of the project.
 
 ### codebase-memory-mcp
-Структурна карта коду. Не зберігає розмовну пам’ять і не дублює Graphiti.
+The structural map of the code. It does not store conversational memory and does not duplicate Graphiti.
 
 ### repo `.claude/settings.json`
-Канонічний repo-level surface для:
+The canonical repo-level surface for:
 - Graphiti hooks;
-- reproducible plugin baseline (`extraKnownMarketplaces` + `enabledPlugins`).
+- the reproducible plugin baseline (`extraKnownMarketplaces` + `enabledPlugins`).
 
 ### `CLAUDE.md`
-Людські правила роботи й tool priority. Саме сюди перенесені принципи Karpathy.
+Human-facing working rules and tool priority. The Karpathy principles live here.
 
 ## 3. Repo data flow
 
@@ -58,25 +58,25 @@ Claude Code session
   -> Graphiti MCP exposes read/search tools to Claude
 ```
 
-## 4. Чому тут немає другого code graph або другого behavior plugin
+## 4. Why there is no second code graph or second behavior plugin
 
-Щоб не дублювати відповідальність:
-- один structural code layer — `codebase-memory-mcp`;
-- один canonical long-term memory layer — Graphiti;
-- один базовий harness — ECC;
-- behavior principles — у `CLAUDE.md`, а не в окремому plugin.
+To avoid duplicating responsibility:
+- one structural code layer — `codebase-memory-mcp`;
+- one canonical long-term memory layer — Graphiti;
+- one baseline harness — ECC;
+- behavior principles — in `CLAUDE.md`, not in a separate plugin.
 
-## 5. Межі — що свідомо не автоматизується пакетом
+## 5. Boundaries — what the package intentionally does not automate
 
-Ці поверхні лишаються зовнішніми runtime boundaries Claude Code і не є пропусками пакета:
-- interactive plugin download/install у Claude Code UI/CLI;
-- ECC `rules` install — через upstream ECC installer або ручне копіювання;
-- `repomix` / `ccusage` download через `npx`, якщо локальний кеш ще порожній;
+These surfaces remain external runtime boundaries of Claude Code and are not package omissions:
+- interactive plugin download/install in the Claude Code UI/CLI;
+- ECC `rules` install — via the upstream ECC installer or manual copy;
+- `repomix` / `ccusage` download via `npx` if the local cache is still empty;
 - interactive project MCP approvals;
-- remote auth login flow до зовнішніх MCP endpoints.
+- the remote auth login flow to external MCP endpoints.
 
-Додатково поза baseline залишаються:
-- другий canonical memory engine;
-- другий code-graph engine поверх `codebase-memory-mcp`;
-- ще один behavior plugin поверх принципів у `CLAUDE.md`;
-- broad plugin layer з auth/perms surface без критичної потреби.
+Additionally, the following stay outside the baseline:
+- a second canonical memory engine;
+- a second code-graph engine on top of `codebase-memory-mcp`;
+- yet another behavior plugin on top of the principles in `CLAUDE.md`;
+- a broad plugin layer with an auth/perms surface without critical need.

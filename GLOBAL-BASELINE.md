@@ -1,28 +1,28 @@
 # Global baseline
 
-Це retained baseline, який має бути доступний для кожного repo. Він складається з **трьох різних шарів**, і їх не треба змішувати:
-- **repo-declared plugin layer** — через `.claude/settings.json` цього пакета;
-- **ECC rules surface** — окремий upstream-owned шар, який plugin system не розносить автоматично;
-- **operator-local utilities** — `repomix` і `ccusage`.
+This is the retained baseline that must be available for every repo. It consists of **three distinct layers**, and they should not be mixed:
+- **repo-declared plugin layer** — via this package's `.claude/settings.json`;
+- **ECC rules surface** — a separate upstream-owned layer that the plugin system does not distribute automatically;
+- **operator-local utilities** — `repomix` and `ccusage`.
 
-## 1. Repo-declared plugin layer — канонічний шлях для plugin portion
+## 1. Repo-declared plugin layer — the canonical path for the plugin portion
 
-Після bootstrap repo `.claude/settings.json` уже містить:
-- `extraKnownMarketplaces` для:
+After bootstrap, the repo `.claude/settings.json` already contains:
+- `extraKnownMarketplaces` for:
   - `ecc` → `affaan-m/everything-claude-code`
   - `context-mode` → `mksglu/context-mode`
   - `ui-ux-pro-max-skill` → `nextlevelbuilder/ui-ux-pro-max-skill`
-- `enabledPlugins` для:
+- `enabledPlugins` for:
   - `ecc@ecc`
   - `context-mode@context-mode`
   - `ui-ux-pro-max@ui-ux-pro-max-skill`
 
-Наслідок:
-- fresh clone має той самий plugin contract;
-- cloud sessions можуть підтягнути plugin portion baseline з repo;
-- user-scoped plugin installs більше не є єдиним source of truth для plugin layer.
+Consequence:
+- a fresh clone gets the same plugin contract;
+- cloud sessions can pull in the plugin-portion baseline from the repo;
+- user-scoped plugin installs are no longer the only source of truth for the plugin layer.
 
-## 2. Optional user preinstall — для зручності локальної машини
+## 2. Optional user preinstall — for local-machine convenience
 
 ### ECC
 ```text
@@ -31,7 +31,7 @@
 /reload-plugins
 ```
 
-Fallback через upstream installer:
+Fallback via the upstream installer:
 ```bash
 git clone https://github.com/affaan-m/everything-claude-code.git ~/data/everything-claude-code
 cd ~/data/everything-claude-code
@@ -54,9 +54,9 @@ npm install
 /reload-plugins
 ```
 
-## 3. ECC rules surface — окремий required шар для повного ECC
+## 3. ECC rules surface — the separate required layer for full ECC
 
-ECC plugin не розносить `rules` автоматично. Якщо хочеш повний ECC rules surface, виконай upstream install:
+The ECC plugin does not distribute `rules` automatically. If you want the full ECC rules surface, run the upstream install:
 
 ```bash
 git clone https://github.com/affaan-m/everything-claude-code.git ~/data/everything-claude-code
@@ -65,7 +65,7 @@ npm install
 ./install.sh --profile full
 ```
 
-Альтернатива — копіювати `rules/common` і потрібні мовні директорії в `~/.claude/rules/` або project `.claude/rules/`.
+An alternative is to copy `rules/common` and the needed language directories into `~/.claude/rules/` or the project `.claude/rules/`.
 
 ## 4. Operator-local utilities
 
@@ -73,7 +73,7 @@ npm install
 ```bash
 npx repomix@latest
 ```
-Або:
+Or:
 ```bash
 npm install -g repomix
 ```
@@ -82,34 +82,34 @@ npm install -g repomix
 ```bash
 npx ccusage@latest
 ```
-Або:
+Or:
 ```bash
 npm install -g ccusage
 ```
 
-## 5. Що покриває ECC
+## 5. What ECC covers
 
-Через ECC приходять:
+ECC brings in:
 - Context7
 - GitHub MCP
 - Sequential Thinking
 
-Їх не треба дублювати в repo `.mcp.json`.
+Do not duplicate them in the repo `.mcp.json`.
 
-## 6. Як перевірити baseline
+## 6. How to verify the baseline
 
-Після bootstrap конкретного repo:
+After bootstrapping a specific repo:
 ```bash
 ./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo
 ```
 
-Ця перевірка показує:
-- чи repo settings декларують retained plugin baseline;
-- чи `.mcp.json` не дублює ECC-provided MCP-и;
-- чи `repomix` і `ccusage` invocable напряму або через `npx`;
-- чи `codebase-memory-mcp` резолвиться;
-- чи локальний plugin cache уже присутній, або plugin layer поки існує тільки як repo declaration;
-- чи ECC `rules` уже присутні локально або в repo;
-- чи `repomix` і `ccusage` доступні напряму або тільки через `npx`.
+This check shows:
+- whether repo settings declare the retained plugin baseline;
+- whether `.mcp.json` does not duplicate ECC-provided MCPs;
+- whether `repomix` and `ccusage` are invocable directly or via `npx`;
+- whether `codebase-memory-mcp` resolves;
+- whether a local plugin cache is already present, or the plugin layer currently exists only as a repo declaration;
+- whether ECC `rules` are already present locally or in the repo;
+- whether `repomix` and `ccusage` are available directly or only via `npx`.
 
-Перший plugin install і перший `npx` запуск можуть вимагати мережу, якщо локальні cache ще порожні.
+The first plugin install and the first `npx` run may require network access if local caches are still empty.

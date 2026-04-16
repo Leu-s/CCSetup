@@ -1,45 +1,45 @@
 # Tutorial
 
-Це найлюдяніший спосіб користуватися цим фреймворком.
+This is the most human-friendly way to use this framework.
 
-Його нормальний режим такий:
-- **людина** завантажує пакет, дає секрети й підтверджує prompts;
-- **Claude Code** читає docs, робить install/bootstrap і далі працює всередині repo;
-- **сам фреймворк** автоматизує hooks, memory, repo settings, MCP wiring і частину first-run setup.
+Its normal mode is:
+- **the human** loads the package, provides secrets, and confirms prompts;
+- **Claude Code** reads the docs, performs install/bootstrap, and then works inside the repo;
+- **the framework itself** automates hooks, memory, repo settings, MCP wiring, and part of the first-run setup.
 
-## 1. Що це за пакет на практиці
+## 1. What this package is in practice
 
-Пакет дає два шари:
-- **базовий Claude Code baseline**: ECC, Context7/GitHub/Sequential Thinking через ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage;
-- **repo overlay**: Graphiti memory, `codebase-memory-mcp`, repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`, hooks і state tree.
+The package gives you two layers:
+- **the base Claude Code baseline**: ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage;
+- **the repo overlay**: Graphiti memory, `codebase-memory-mcp`, repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`, hooks, and the state tree.
 
-Тобто це не просто "пам'ять". Це робоче середовище для Claude Code навколо конкретного репозиторію.
+So it is not just "memory". It is a working environment for Claude Code around a specific repository.
 
-## 2. Хто що робить
+## 2. Who does what
 
-### Що робиш ти
-- розпаковуєш пакет;
-- даєш Claude Code доступ до repo;
-- задаєш потрібні env secrets;
-- підтверджуєш plugin / MCP prompts;
-- за потреби просиш Claude Code пояснити, що відбувається.
+### What you do
+- unpack the package;
+- give Claude Code access to the repo;
+- set the required env secrets;
+- confirm plugin / MCP prompts;
+- ask Claude Code to explain what is happening when needed.
 
-### Що робить Claude Code
-- читає `README.md`, `QUICKSTART.md`, `INSTALL.md`, `USER-MANUAL.md`;
-- виконує install flow і bootstrap repo;
-- далі працює через agreed tool order: `codebase-memory-mcp` → Graphiti → Context7 → GitHub MCP → raw files.
+### What Claude Code does
+- reads `README.md`, `QUICKSTART.md`, `INSTALL.md`, `USER-MANUAL.md`;
+- runs the install flow and bootstraps the repo;
+- then works through the agreed tool order: `codebase-memory-mcp` → Graphiti → Context7 → GitHub MCP → raw files.
 
-### Що робить фреймворк автоматично
-- сідає repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`;
-- підключає Graphiti hooks;
-- створює queue/ledger/archive path для пам'яті;
-- вимикає built-in auto memory на repo рівні;
-- вмикає `codebase-memory-mcp auto_index` і робить первинну індексацію repo;
-- декларує retained **plugin** layer у repo settings.
+### What the framework does automatically
+- seeds the repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`;
+- wires up Graphiti hooks;
+- creates the queue/ledger/archive path for memory;
+- disables built-in auto memory at the repo level;
+- enables `codebase-memory-mcp auto_index` and runs the initial indexing of the repo;
+- declares the retained **plugin** layer in the repo settings.
 
-## 3. Що саме змінює bootstrap у repo
+## 3. What bootstrap actually changes in the repo
 
-Після install/bootstrap у repo з’являються або оновлюються:
+After install/bootstrap the following appear or are updated in the repo:
 - `CLAUDE.md`;
 - `.claude/settings.json`;
 - `.mcp.json`;
@@ -47,118 +47,118 @@
 - `.claude/hooks/*`;
 - `.claude/rules/graphiti-memory.md`;
 - `.claude/state/.gitignore`;
-- `.claude/state/graphiti-runtime/` і runtime stamp;
-- локальні queue/ledger/archive файли вже під час роботи hooks.
+- `.claude/state/graphiti-runtime/` and the runtime stamp;
+- local queue/ledger/archive files, once hooks start running.
 
-Що **не** приїжджає в repo автоматично:
-- `repomix` і `ccusage` як локальні CLI;
-- ECC `rules`, бо plugin layer не розносить їх автоматично.
+What does **not** arrive in the repo automatically:
+- `repomix` and `ccusage` as local CLIs;
+- ECC `rules`, because the plugin layer does not deploy them automatically.
 
-## 4. Перший шлях з нуля
+## 4. First path from scratch
 
-1. Пройди [QUICKSTART.md](QUICKSTART.md).
-2. Якщо треба повний install з поясненнями — відкрий [INSTALL.md](INSTALL.md).
-3. Після bootstrap виконай:
+1. Go through [QUICKSTART.md](QUICKSTART.md).
+2. If you need a full install with explanations, open [INSTALL.md](INSTALL.md).
+3. After bootstrap, run:
    - `./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo`
    - `./tools/graphiti_admin.py status /absolute/path/to/repo`
    - `./tools/graphiti_admin.py doctor /absolute/path/to/repo`
-4. Відкрий repo у Claude Code.
-5. Погодь plugin / MCP prompts, якщо вони з'являться.
+4. Open the repo in Claude Code.
+5. Approve plugin / MCP prompts if they appear.
 
-## 5. Що сказати Claude Code
+## 5. What to tell Claude Code
 
-### Варіант 1. Постав фреймворк з нуля
-
-```text
-Прочитай README.md, TUTORIAL.md, QUICKSTART.md, INSTALL.md і USER-MANUAL.md з цього пакета.
-Потім підготуй цей repo за цим фреймворком.
-Спочатку скажи, які ручні кроки й підтвердження потрібні від мене, а далі виконуй install послідовно.
-Не дублюй ECC MCP-и в repo .mcp.json і не копіюй plugin hooks вручну.
-```
-
-### Варіант 2. Перевір, чи все вже встановлено правильно
+### Option 1. Set up the framework from scratch
 
 ```text
-Перевір цей repo на відповідність фреймворку.
-Почни з baseline-doctor, status і doctor.
-Поясни простими словами, що вже гаразд, а що ще треба доробити.
+Read README.md, TUTORIAL.md, QUICKSTART.md, INSTALL.md, and USER-MANUAL.md from this package.
+Then set up this repo under this framework.
+First, tell me which manual steps and confirmations are needed from me, then run the install in order.
+Do not duplicate ECC MCPs in the repo .mcp.json and do not copy plugin hooks by hand.
 ```
 
-### Варіант 3. Поясни фреймворк людською мовою
+### Option 2. Check that everything is already installed correctly
 
 ```text
-Поясни мені цей фреймворк як користувачу: що він автоматизує, що робить Claude Code, що маю робити я сам, і як мені працювати з ним щодня.
-Спирайся на TUTORIAL.md і USER-MANUAL.md.
+Check this repo for compliance with the framework.
+Start with baseline-doctor, status, and doctor.
+Explain in plain terms what is already fine and what still needs to be done.
 ```
 
-## 6. Що побачиш у Claude Code на першому відкритті repo
+### Option 3. Explain the framework in plain language
 
-Нормальна послідовність така:
-- Claude Code бачить repo `.claude/settings.json`;
-- може попросити підтвердити plugins із retained baseline;
-- може попросити підтвердити project MCP servers;
-- після цього repo уже має working plugin baseline, hooks, `graphiti-memory` і `codebase-memory-mcp`.
+```text
+Explain this framework to me as a user: what it automates, what Claude Code does, what I have to do myself, and how to work with it day to day.
+Lean on TUTORIAL.md and USER-MANUAL.md.
+```
 
-Важлива межа: repo settings відтворюють **plugin layer**, але не встановлюють за тебе `repomix`, `ccusage` і не розносять ECC `rules`. Для повного ECC rules surface окремо постав upstream ECC rules або скопіюй `rules/common` + потрібні мовні директорії.
+## 6. What you will see in Claude Code on the first open of the repo
 
-Якщо щось із цього незрозуміло, не намагайся вгадувати вручну. Просто попроси Claude Code пояснити, який prompt з'явився і навіщо він потрібний.
+The normal sequence is:
+- Claude Code sees the repo `.claude/settings.json`;
+- it may ask you to confirm plugins from the retained baseline;
+- it may ask you to confirm project MCP servers;
+- after that the repo has a working plugin baseline, hooks, `graphiti-memory`, and `codebase-memory-mcp`.
 
-## 7. Як користуватися фреймворком щодня
+Important boundary: repo settings reproduce the **plugin layer**, but they do not install `repomix`, `ccusage` for you, and they do not deploy ECC `rules`. For the full ECC rules surface, install the upstream ECC rules separately or copy `rules/common` plus the language directories you need.
 
-### Коли треба зрозуміти новий repo
-Скажи Claude Code, щоб він почав із `codebase-memory-mcp`, а не читав файли навмання.
+If something here is unclear, do not try to guess by hand. Just ask Claude Code to explain which prompt appeared and why it is needed.
 
-### Коли треба продовжити вчорашню роботу
-Попроси спершу перевірити Graphiti memory і startup checkpoint, а потім перейти до конкретної задачі.
+## 7. How to use the framework day to day
 
-### Коли треба поточна документація бібліотеки
-Скажи використати Context7.
+### When you need to understand a new repo
+Tell Claude Code to start with `codebase-memory-mcp` instead of reading files at random.
 
-### Коли треба GitHub-операції
-Скажи використати GitHub MCP.
+### When you need to continue yesterday's work
+Ask it to check Graphiti memory and the startup checkpoint first, then move to the specific task.
 
-### Коли треба повний snapshot repo
-Скажи використати `repomix`.
+### When you need current library documentation
+Tell it to use Context7.
 
-### Коли треба подивитися usage/cost
-Скажи використати `ccusage`.
+### When you need GitHub operations
+Tell it to use the GitHub MCP.
 
-### Коли задача UI/UX
-Скажи явно, що можна спертися на `ui-ux-pro-max-skill`.
+### When you need a full repo snapshot
+Tell it to use `repomix`.
 
-## 8. Що автоматизовано, а що ні
+### When you want to look at usage/cost
+Tell it to use `ccusage`.
 
-### Автоматизовано
-- Graphiti capture через `Stop` і `PreCompact`;
-- local checkpoint на `SessionStart`;
-- reproducible plugin baseline у repo settings;
+### When the task is UI/UX
+Say explicitly that it can lean on `ui-ux-pro-max-skill`.
+
+## 8. What is automated and what is not
+
+### Automated
+- Graphiti capture via `Stop` and `PreCompact`;
+- local checkpoint on `SessionStart`;
+- reproducible plugin baseline in repo settings;
 - `codebase-memory-mcp` first-run bootstrap;
-- admin CLI для health/status/flush/requeue.
+- admin CLI for health/status/flush/requeue.
 
-### Не автоматизовано повністю
-- введення секретів;
-- live approvals у Claude Code;
-- ECC rules install, якщо хочеш повний rules surface від ECC;
-- зовнішній Docker/runtime bring-up, якщо середовище цього не дозволяє;
-- рішення, який саме task ти хочеш робити далі.
+### Not fully automated
+- entering secrets;
+- live approvals in Claude Code;
+- ECC rules install, if you want the full rules surface from ECC;
+- external Docker/runtime bring-up, if the environment does not allow it;
+- the decision of which task you want to work on next.
 
-## 9. Типові помилки користувача
+## 9. Typical user mistakes
 
-Не треба:
-- вручну дублювати Context7/GitHub/Sequential Thinking у repo `.mcp.json`;
-- вручну копіювати ECC hooks у repo hooks;
-- думати, що repo-declared plugin layer автоматично встановив `repomix`, `ccusage` або ECC `rules`;
-- міняти `GRAPHITI_STORAGE_GROUP_ID` руками без migration flow;
-- редагувати `.claude/state/` як звичайну конфігурацію;
-- чекати, що нова машина автоматично матиме той самий local startup checkpoint.
+Do not:
+- manually duplicate Context7/GitHub/Sequential Thinking in the repo `.mcp.json`;
+- manually copy ECC hooks into repo hooks;
+- assume that the repo-declared plugin layer automatically installed `repomix`, `ccusage`, or ECC `rules`;
+- change `GRAPHITI_STORAGE_GROUP_ID` by hand without the migration flow;
+- edit `.claude/state/` like regular configuration;
+- expect a new machine to automatically have the same local startup checkpoint.
 
-## 10. Якщо щось незрозуміло
+## 10. If something is unclear
 
-Найкращий шлях — не шукати відповідь навмання, а попросити Claude Code пояснити систему по docs.
+The best path is not to search for an answer blindly, but to ask Claude Code to explain the system via the docs.
 
-Почни з цього:
+Start with this:
 
 ```text
-Поясни мені поточний стан цього фреймворку за його документацією.
-Скажи, що тут є базовим baseline, що додається на рівні repo, що автоматизовано, що потребує мого підтвердження, і як мені правильно користуватися цим стеком.
+Explain to me the current state of this framework based on its documentation.
+Tell me what is the base baseline here, what is added at the repo level, what is automated, what needs my confirmation, and how to properly use this stack.
 ```

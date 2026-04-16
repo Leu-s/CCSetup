@@ -1,51 +1,51 @@
 # Claude Code Ecosystem Baseline + Graphiti Overlay
 
-Це фреймворк для **узгодженого baseline-стеку Claude Code** з керованою **Graphiti-пам’яттю на рівні репозиторію**.
+This is a framework for a **consistent Claude Code baseline stack** with a managed **Graphiti memory layer at the repository level**.
 
-Він фіксує дві площини:
-- **retained Claude Code ecosystem baseline**: ECC, Context7/GitHub/Sequential Thinking через ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage;
+It pins down two planes:
+- **retained Claude Code ecosystem baseline**: ECC, Context7/GitHub/Sequential Thinking via ECC, context-mode, ui-ux-pro-max-skill, repomix, ccusage;
 - **repo-owned overlay**: Graphiti, queue-first Stop/PreCompact hooks, `MEMORY_GROUP_ID`, `GRAPHITI_STORAGE_GROUP_ID`, `codebase-memory-mcp`, repo `CLAUDE.md`, `.claude/settings.json`, `.mcp.json`.
 
-## Рекомендований шлях встановлення і налаштування
+## Recommended install and configuration path
 
-**Рекомендований шлях встановлення і налаштування — через Claude Code.**
+**The recommended install and configuration path is via Claude Code.**
 
-Практичний порядок такий:
-1. підготувати retained plugin layer один раз на машині або дати Claude Code поставити repo-declared plugins на першому trusted open;
-2. окремо подбати про operator-local utilities (`repomix`, `ccusage`) і, якщо потрібен повний ECC rules surface, встановити ECC rules через upstream installer або ручне копіювання;
-3. встановити `codebase-memory-mcp` binary;
-4. підняти Graphiti MCP + backend;
-5. bootstrap-нути конкретний repo цим пакетом;
-6. відкрити repo в Claude Code і дати йому підхопити repo `.claude/settings.json` та `.mcp.json`.
+The practical order is:
+1. prepare the retained plugin layer once on the machine, or let Claude Code install the repo-declared plugins on the first trusted open;
+2. separately take care of operator-local utilities (`repomix`, `ccusage`) and, if you need the full ECC rules surface, install ECC rules via the upstream installer or manual copy;
+3. install the `codebase-memory-mcp` binary;
+4. bring up Graphiti MCP + backend;
+5. bootstrap the specific repo with this package;
+6. open the repo in Claude Code and let it pull in the repo `.claude/settings.json` and `.mcp.json`.
 
-## Якщо ти людина, а основну роботу робитиме Claude Code
+## If you are a human and Claude Code will do the main work
 
-Почни з цього порядку:
-1. [TUTORIAL.md](TUTORIAL.md) — людський сценарій використання;
-2. [QUICKSTART.md](QUICKSTART.md) — найкоротший install path;
-3. [INSTALL.md](INSTALL.md) — повний install path;
-4. [USER-MANUAL.md](USER-MANUAL.md) — щоденна робота і best practices.
+Start with this order:
+1. [TUTORIAL.md](TUTORIAL.md) — human-facing usage scenario;
+2. [QUICKSTART.md](QUICKSTART.md) — the shortest install path;
+3. [INSTALL.md](INSTALL.md) — the full install path;
+4. [USER-MANUAL.md](USER-MANUAL.md) — day-to-day work and best practices.
 
-Найкраща стартова інструкція для Claude Code:
+The best starter instruction for Claude Code:
 
 ```text
-Прочитай README.md, TUTORIAL.md, QUICKSTART.md, INSTALL.md і USER-MANUAL.md з цього пакета.
-Потім підготуй repo за цим фреймворком.
-Перед ручними кроками коротко скажи, що саме мені треба підтвердити або ввести самому.
+Read README.md, TUTORIAL.md, QUICKSTART.md, INSTALL.md and USER-MANUAL.md from this package.
+Then prepare the repo according to this framework.
+Before any manual steps, briefly tell me exactly what I need to confirm or enter myself.
 ```
 
-## Підтримуване операторське середовище
+## Supported operator environment
 
-Пакет орієнтований на **Linux, macOS і WSL**.
-`bash`, `python3 -m venv` і Docker Compose описані саме для цього середовища.
-`systemd` user timer-и в пакеті — це Linux/WSL path; на macOS використовуй manual flush або власний scheduler (`launchd` пакет не постачає).
-Windows-native flow без WSL не є first-class target у цьому пакеті.
+The package targets **Linux, macOS and WSL**.
+`bash`, `python3 -m venv` and Docker Compose are described specifically for this environment.
+The `systemd` user timers in the package are a Linux/WSL path; on macOS use manual flush or your own scheduler (the package does not ship `launchd`).
+Windows-native flow without WSL is not a first-class target for this package.
 
-## Що входить у погоджений baseline
+## What is in the agreed baseline
 
 ### Retained ecosystem baseline
 - ECC / everything-claude-code
-- Context7, GitHub MCP, Sequential Thinking — через ECC
+- Context7, GitHub MCP, Sequential Thinking — via ECC
 - context-mode
 - ui-ux-pro-max-skill
 - repomix
@@ -57,48 +57,48 @@ Windows-native flow без WSL не є first-class target у цьому паке
 - `MEMORY_GROUP_ID`
 - `GRAPHITI_STORAGE_GROUP_ID`
 - `codebase-memory-mcp`
-- repo `.claude/settings.json`, `CLAUDE.md`, `.mcp.json`, hooks і state tree
+- repo `.claude/settings.json`, `CLAUDE.md`, `.mcp.json`, hooks and state tree
 
-## Що тепер є source of truth
+## What is now the source of truth
 
-- **Repo `.claude/settings.json`** — канонічне місце для repo-declared plugin layer, repo hooks і project behavior.
-- **Repo `.mcp.json`** — канонічне місце для Graphiti + `codebase-memory-mcp`.
-- **Repo `CLAUDE.md`** — робочі принципи, tool priority, memory ids.
-- **User/global preinstalls** — лише пришвидшують перший запуск, але більше не є єдиним способом відтворити baseline.
+- **Repo `.claude/settings.json`** — the canonical location for the repo-declared plugin layer, repo hooks and project behavior.
+- **Repo `.mcp.json`** — the canonical location for Graphiti + `codebase-memory-mcp`.
+- **Repo `CLAUDE.md`** — working principles, tool priority, memory ids.
+- **User/global preinstalls** — only speed up the first run; they are no longer the sole way to reproduce the baseline.
 
-## Важлива межа retained baseline
+## Important boundary of the retained baseline
 
-Repo `.claude/settings.json` відтворює **plugin portion** retained baseline.
-Вона **не** встановлює за тебе operator-local CLI-утиліти (`repomix`, `ccusage`) і **не** розносить ECC `rules`, бо ECC plugins не можуть автоматично дистрибутувати rules.
+The repo `.claude/settings.json` reproduces the **plugin portion** of the retained baseline.
+It does **not** install operator-local CLI utilities (`repomix`, `ccusage`) for you, and it does **not** distribute ECC `rules`, because ECC plugins cannot automatically distribute rules.
 
-Практичний наслідок:
-- plugin layer Claude Code може підтягнути з repo на першому trusted open;
-- `repomix` і `ccusage` лишаються локальними CLI-утилітами;
-- для повного ECC rules surface треба окремо виконати ECC upstream install або скопіювати `rules/common` + потрібні мовні директорії.
+Practical consequence:
+- the Claude Code plugin layer can be pulled in from the repo on the first trusted open;
+- `repomix` and `ccusage` remain local CLI utilities;
+- for the full ECC rules surface, run the ECC upstream install separately or copy `rules/common` + the language directories you need.
 
-Перший plugin install і перший `npx` запуск можуть вимагати мережу, якщо локальні cache ще порожні.
+The first plugin install and the first `npx` run may require the network if local caches are still empty.
 
-## Що пакет реально автоматизує
+## What the package actually automates
 
-Пакет автоматизує:
-- bootstrap repo surfaces;
-- dedicated hook runtime для host-side Graphiti ingest;
-- queue-first capture через `Stop` і `PreCompact`;
-- delivery path з retry / archive / dead-letter;
+The package automates:
+- bootstrapping repo surfaces;
+- a dedicated hook runtime for host-side Graphiti ingest;
+- queue-first capture via `Stop` and `PreCompact`;
+- a delivery path with retry / archive / dead-letter;
 - deterministic mapping `MEMORY_GROUP_ID -> GRAPHITI_STORAGE_GROUP_ID`;
-- repo-declared plugin layer через `extraKnownMarketplaces` + `enabledPlugins`;
-- project `.mcp.json`, що додає `graphiti-memory` і `codebase-memory-mcp`;
-- `codebase-memory-mcp` bootstrap: `auto_index=true` + первинний `index_repository` під час install flow;
-- admin CLI, baseline doctor, doctor, status, flush і migration flow.
+- the repo-declared plugin layer via `extraKnownMarketplaces` + `enabledPlugins`;
+- project `.mcp.json` that adds `graphiti-memory` and `codebase-memory-mcp`;
+- `codebase-memory-mcp` bootstrap: `auto_index=true` + initial `index_repository` during the install flow;
+- admin CLI, baseline doctor, doctor, status, flush and migration flow.
 
-## Що пакет не підміняє
+## What the package does not replace
 
-Пакет **не** підміняє upstream installers і не копіює чужі plugin hooks вручну:
-- ECC hooks лишаються в ECC plugin/install layer;
-- context-mode hooks лишаються в context-mode plugin layer;
-- repo hooks цього пакета відповідають тільки за Graphiti lifecycle і repo env/state.
+The package does **not** replace upstream installers and does not copy third-party plugin hooks by hand:
+- ECC hooks stay in the ECC plugin/install layer;
+- context-mode hooks stay in the context-mode plugin layer;
+- repo hooks in this package are responsible only for the Graphiti lifecycle and repo env/state.
 
-## Найкоротший шлях
+## The shortest path
 
 ```bash
 mkdir -p ~/data
@@ -106,14 +106,14 @@ unzip /path/to/downloaded-package.zip -d ~/data/
 cd ~/data/claude-code-framework-v7-ecosystem-final
 ```
 
-Потім:
-1. пройди [QUICKSTART.md](QUICKSTART.md);
-2. пройди [INSTALL.md](INSTALL.md);
-3. bootstrap-нь repo;
-4. виконай `./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo`;
-5. відкрий repo у Claude Code.
+Then:
+1. walk through [QUICKSTART.md](QUICKSTART.md);
+2. walk through [INSTALL.md](INSTALL.md);
+3. bootstrap the repo;
+4. run `./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo`;
+5. open the repo in Claude Code.
 
-## Що читати далі
+## What to read next
 
 1. [TUTORIAL.md](TUTORIAL.md)
 2. [GLOBAL-BASELINE.md](GLOBAL-BASELINE.md)

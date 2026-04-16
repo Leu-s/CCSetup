@@ -1,125 +1,125 @@
 # Group ID policy
 
-## Призначення політики
+## Purpose of this policy
 
-Пакет розділяє два різні поняття:
+The package separates two distinct concepts:
 - **logical project identity**
 - **storage namespace identity**
 
 ## 1. Logical group id
 
-Це людиночитний ідентифікатор проекту:
+This is the human-readable project identifier:
 ```text
 MEMORY_GROUP_ID: verbalium/mobile-app
 ```
 
-Він:
-- читається людьми
-- живе в `CLAUDE.md`
-- не повинен мінятися через rename каталогу
-- має відображати project identity, а не випадковий локальний шлях
+It:
+- is read by humans
+- lives in `CLAUDE.md`
+- must not change on directory rename
+- must reflect project identity, not an incidental local path
 
 ## 2. Storage group id
 
-Це технічний namespace, який реально використовується hooks і Graphiti ingest path:
+This is the technical namespace actually used by hooks and the Graphiti ingest path:
 ```text
 GRAPHITI_STORAGE_GROUP_ID: g_verbalium_mobile_app_abcd1234efgh5678
 ```
 
-Він:
-- генерується детерміновано
-- є ASCII-safe
-- не вводиться вручну
-- не призначений для читання людиною як основна project label
+It:
+- is generated deterministically
+- is ASCII-safe
+- must not be entered by hand
+- is not intended as the primary human-facing project label
 
-## 3. Нормалізація logical id
+## 3. Logical id normalization
 
-Перед обчисленням storage id logical id:
-- нормалізується в Unicode NFKC
-- обрізається по краях
-- схлопує повторні пробіли
+Before the storage id is computed, the logical id is:
+- normalized to Unicode NFKC
+- trimmed at the edges
+- collapsed on repeated whitespace
 
-Це прибирає тихі дублікати на кшталт:
+This removes silent duplicates such as:
 - `repo`
 - `repo `
 - `repo   `
-- compatibility-символів, що виглядають однаково
+- compatibility characters that look identical
 
-## 4. Формат storage id
+## 4. Storage id format
 
 ```text
 g_<slug>_<hash>
 ```
 
-Де:
-- `slug` — ASCII-варіант logical id
-- `hash` — короткий base32 від SHA-256 канонізованого logical id
+Where:
+- `slug` is the ASCII variant of the logical id
+- `hash` is a short base32 of SHA-256 over the canonicalized logical id
 
-## 5. Пріоритет джерел
+## 5. Source priority
 
-Під час runtime пакет працює в такому порядку:
+At runtime the package resolves in this order:
 1. registry mapping
-2. `GRAPHITI_STORAGE_GROUP_ID` у `CLAUDE.md`
-3. детермінований expected storage id
+2. `GRAPHITI_STORAGE_GROUP_ID` in `CLAUDE.md`
+3. deterministic expected storage id
 
-### Практичний наслідок
-Після bootstrap registry стає канонічним local record для repo memory identity.
+### Practical consequence
+After bootstrap, the registry becomes the canonical local record for a repo's memory identity.
 
 ## 6. Bootstrap policy
 
-Під час bootstrap:
-- logical id нормалізується
-- обчислюється canonical storage id
-- у `CLAUDE.md` пишуться обидва значення
-- у registry записується mapping
+During bootstrap:
+- the logical id is normalized
+- the canonical storage id is computed
+- both values are written to `CLAUDE.md`
+- the mapping is written to the registry
 
-Якщо використано `--keep-existing-storage-id`, пакет:
-- зберігає наявний storage id
-- фіксує його в registry як effective storage id
-- окремо пам'ятає `expected_storage_group_id`
+If `--keep-existing-storage-id` is used, the package:
+- preserves the existing storage id
+- records it in the registry as the effective storage id
+- separately remembers `expected_storage_group_id`
 
-## 7. Що таке drift
+## 7. What drift is
 
-Drift є, якщо:
-- storage id у `CLAUDE.md` не збігається з registry або expected
-- registry знає інший storage id для того самого logical id
-- кілька logical ids ведуть на один storage id
+Drift exists when:
+- the storage id in `CLAUDE.md` does not match the registry or expected value
+- the registry knows a different storage id for the same logical id
+- multiple logical ids point to the same storage id
 
-## 8. Як поводитися при rename
+## 8. How to handle renames
 
-### Якщо проект той самий
-Logical id не змінюй.
+### If it is the same project
+Do not change the logical id.
 
-### Якщо identity справді змінилася
-Використай один із двох режимів:
+### If the identity really changed
+Use one of the two modes:
 
 #### `keep-storage`
-Зберігає старий storage namespace.
-Підходить, якщо це той самий проект, просто з новою людською назвою.
+Preserves the old storage namespace.
+Appropriate when it is the same project, just with a new human-facing name.
 
 #### `new-storage`
-Створює новий storage namespace.
-Підходить, якщо це справді нова memory line.
+Creates a new storage namespace.
+Appropriate when it is genuinely a new memory line.
 
-## 9. Команди для свідомої зміни identity
+## 9. Commands for deliberate identity changes
 
-### Зберегти storage id
+### Preserve the storage id
 ```bash
 ./tools/graphiti_admin.py migrate-logical-id /absolute/path/to/repo \
   --new-logical-group-id verbalium/mobile \
   --mode keep-storage
 ```
 
-### Створити новий storage id
+### Create a new storage id
 ```bash
 ./tools/graphiti_admin.py migrate-logical-id /absolute/path/to/repo \
   --new-logical-group-id verbalium/mobile-v2 \
   --mode new-storage
 ```
 
-## 10. Чого не треба робити
+## 10. What not to do
 
-- не використовуй raw logical id як backend namespace
-- не підправляй storage id руками “для краси”
-- не заводь два logical ids для одного проекту без свідомої policy
-- не змішуй backend-профілі для однієї memory line без migration plan
+- do not use the raw logical id as a backend namespace
+- do not hand-edit the storage id "for aesthetics"
+- do not create two logical ids for the same project without a deliberate policy
+- do not mix backend profiles for a single memory line without a migration plan

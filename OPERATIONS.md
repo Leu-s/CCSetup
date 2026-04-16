@@ -1,6 +1,6 @@
 # Operations
 
-## 1. Базові перевірки
+## 1. Baseline checks
 
 ```bash
 ./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo
@@ -15,16 +15,16 @@
 ./tools/graphiti_admin.py requeue /absolute/path/to/repo --source dead-letter --limit 20
 ```
 
-## 3. Що не керується цим repo runtime
+## 3. What this repo runtime does not manage
 
-Global/plugin lifecycle для:
+Global/plugin lifecycle for:
 - ECC
 - context-mode
 - ui-ux-pro-max-skill
 
-Вони керуються Claude Code plugin system або upstream installers.
+These are managed by the Claude Code plugin system or upstream installers.
 
-## 4. Що тепер керується цим repo runtime
+## 4. What this repo runtime now manages
 
 - Graphiti repo overlay
 - queue / ledger / archive / dead-letter
@@ -33,42 +33,42 @@ Global/plugin lifecycle для:
 
 ## 5. Scheduler boundary
 
-Цей пакет не вимагає конкретного scheduler, але описує два recommended paths: systemd на Linux/WSL та cron на будь-якій Unix-подібній системі (macOS, Linux, WSL).
+The package does not mandate a specific scheduler, but it describes two recommended paths: systemd on Linux/WSL and cron on any Unix-like system (macOS, Linux, WSL).
 
 ### 5.1 Linux / WSL via systemd
 
-Шаблони юнітів лежать у `ops/systemd/`:
-- `graphiti-flush@.service` викликає `./.claude/hooks/run_python.sh graphiti_flush.py --limit 50` у заданому repo;
-- `graphiti-flush@.timer` спрацьовує кожні 2 хвилини (`OnUnitActiveSec=2m`) після першого старту через `OnBootSec=1m`.
+Unit templates live under `ops/systemd/`:
+- `graphiti-flush@.service` invokes `./.claude/hooks/run_python.sh graphiti_flush.py --limit 50` in the given repo;
+- `graphiti-flush@.timer` fires every 2 minutes (`OnUnitActiveSec=2m`) after the initial start via `OnBootSec=1m`.
 
-Інсталяція як user units (instance name — escaped абсолютний шлях до repo, див. `systemd-escape`).
+Install as user units (instance name is the escaped absolute path to the repo, see `systemd-escape`).
 
 ### 5.2 Cross-platform via cron
 
-Якщо systemd недоступний (macOS, мінімальні Linux образи без user-systemd), cron-wrapper дає однаковий shape на всіх підтримуваних платформах.
+If systemd is unavailable (macOS, minimal Linux images without user-systemd), a cron wrapper provides the same shape across all supported platforms.
 
-Shape wrapper-скрипту `~/.claude/hooks/graphiti-flush-cron.sh`:
+Shape of the wrapper script `~/.claude/hooks/graphiti-flush-cron.sh`:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 1. Де лежить сам ccsetup clone — звідси запускається admin CLI.
+# 1. Where the ccsetup clone itself lives — the admin CLI runs from here.
 CCSETUP_DIR="${CCSETUP_DIR:-$HOME/src/ccsetup}"
 
-# 2. Секрети і env для graphiti_core: chmod 600, містить OPENAI_API_KEY,
-#    NEO4J_PASSWORD, NEO4J_URI, GOOGLE_API_KEY тощо.
+# 2. Secrets and env for graphiti_core: chmod 600, contains OPENAI_API_KEY,
+#    NEO4J_PASSWORD, NEO4J_URI, GOOGLE_API_KEY, etc.
 ENV_FILE="${GRAPHITI_CRON_ENV_FILE:-$HOME/.claude/graphiti.neo4j.env}"
 
-# 3. Список repo, по одному абсолютному шляху на рядок, # коментарі та порожні рядки ігноруються.
+# 3. Repo list, one absolute path per line; # comments and blank lines are ignored.
 REPOS_LIST="${GRAPHITI_CRON_REPOS_LIST:-$HOME/.claude/hooks/graphiti-flush-repos.list}"
 
-# 4. Cron-specific лог у stable каталозі state.
+# 4. Cron-specific log in a stable state directory.
 LOG_DIR="${GRAPHITI_CRON_LOG_DIR:-$HOME/.claude/state}"
 LOG_FILE="$LOG_DIR/cron-flush.log"
 mkdir -p "$LOG_DIR"
 
-# Завантажити env (chmod 600).
+# Load env (chmod 600).
 if [ -f "$ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
@@ -88,13 +88,13 @@ while IFS= read -r repo || [ -n "$repo" ]; do
 done < "$REPOS_LIST"
 ```
 
-Що робить:
-- вантажить env з `~/.claude/graphiti.neo4j.env` (chmod 600, містить `OPENAI_API_KEY`, `NEO4J_PASSWORD`, `NEO4J_URI`, опційно `GOOGLE_API_KEY`);
-- ітерує список repo з `~/.claude/hooks/graphiti-flush-repos.list` (один абсолютний шлях на рядок, `#`-коментарі і порожні рядки пропускаються);
-- на кожен repo виконує `./tools/graphiti_admin.py flush <repo> --limit 50`;
-- пише per-run лог у `~/.claude/state/cron-flush.log` (stdout+stderr per repo).
+What it does:
+- loads env from `~/.claude/graphiti.neo4j.env` (chmod 600, containing `OPENAI_API_KEY`, `NEO4J_PASSWORD`, `NEO4J_URI`, and optionally `GOOGLE_API_KEY`);
+- iterates the repo list from `~/.claude/hooks/graphiti-flush-repos.list` (one absolute path per line, `#` comments and empty lines are skipped);
+- runs `./tools/graphiti_admin.py flush <repo> --limit 50` for each repo;
+- writes a per-run log to `~/.claude/state/cron-flush.log` (stdout+stderr per repo).
 
-Приклад вмісту `~/.claude/hooks/graphiti-flush-repos.list`:
+Example contents of `~/.claude/hooks/graphiti-flush-repos.list`:
 
 ```text
 # One absolute repo path per line.
@@ -102,33 +102,33 @@ done < "$REPOS_LIST"
 /Users/you/src/ccsetup
 ```
 
-Приклад crontab (кожні 15 хвилин):
+Example crontab (every 15 minutes):
 
 ```cron
 */15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh >> ~/.claude/state/cron-flush.log 2>&1
 ```
 
-Права і послідовність:
+Permissions and order:
 - `chmod +x ~/.claude/hooks/graphiti-flush-cron.sh`;
 - `chmod 600 ~/.claude/graphiti.neo4j.env`;
-- `crontab -e` щоб додати рядок вище.
+- `crontab -e` to add the line above.
 
 ### 5.3 macOS Full Disk Access requirement
 
-На сучасних macOS `/usr/sbin/cron` сам по собі не має доступу до приватних каталогів користувача (включно з `~/.claude/**` і багатьма repo під `~/Documents`, `~/Desktop`, external volumes). Без Full Disk Access (FDA) cron-джоб тихо провалюється на читанні protected paths — сам `cron` запускається, але wrapper не бачить env file, repos list або `.claude/state/`, і доставка мовчки не відбувається.
+On modern macOS, `/usr/sbin/cron` itself does not have access to the user's private directories (including `~/.claude/**` and many repos under `~/Documents`, `~/Desktop`, and external volumes). Without Full Disk Access (FDA), a cron job silently fails when reading protected paths — `cron` itself runs, but the wrapper cannot see the env file, repos list, or `.claude/state/`, and delivery does not happen silently.
 
-Як увімкнути FDA для cron:
+How to enable FDA for cron:
 
-1. відкрий `System Settings → Privacy & Security → Full Disk Access`;
-2. натисни `+` і через Cmd+Shift+G додай `/usr/sbin/cron`;
-3. увімкни тумблер для `cron`;
-4. якщо редагуєш crontab через `crontab -e`, термінал (Terminal.app / iTerm) теж має бути у FDA — інакше редагування збережеться, але виконання не побачить protected paths.
+1. open `System Settings → Privacy & Security → Full Disk Access`;
+2. press `+` and via Cmd+Shift+G add `/usr/sbin/cron`;
+3. toggle `cron` on;
+4. if you edit crontab via `crontab -e`, the terminal (Terminal.app / iTerm) must also be in FDA — otherwise the edit will save, but execution will not see protected paths.
 
-Перевірка: після першого cron-fire лог `~/.claude/state/cron-flush.log` має містити рядок `flush <repo>` і не містити `Permission denied` / `Operation not permitted`.
+Verification: after the first cron fire, the log `~/.claude/state/cron-flush.log` should contain a `flush <repo>` line and should not contain `Permission denied` / `Operation not permitted`.
 
 ### 5.4 Async flush via `Stop` hook
 
-Альтернатива cron/systemd для latency-чутливих setups — `queue.asyncFlushOnStop=true` у `.claude/graphiti.json`. Тоді `Stop` після spool сам спавнить detached flush subprocess (див. `HOOKS.md` §6 і `CONFIG-REFERENCE.md` §5). Підходить, якщо хочеш бачити session summary у Neo4j майже одразу, без зовнішнього scheduler. Cron все одно лишається корисним як safety net для retry після мережевих збоїв і для repo, з якими давно не було сесій.
+An alternative to cron/systemd for latency-sensitive setups is `queue.asyncFlushOnStop=true` in `.claude/graphiti.json`. With it, `Stop` spawns a detached flush subprocess itself after spooling (see `HOOKS.md` §6 and `CONFIG-REFERENCE.md` §5). This is suitable if you want to see session summaries in Neo4j almost immediately without an external scheduler. Cron still remains useful as a safety net for retries after network failures and for repos that have not had sessions in a while.
 
 ### 5.5 Scheduler boundary (EN)
 

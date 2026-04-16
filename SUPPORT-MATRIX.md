@@ -1,22 +1,22 @@
 # Support matrix
 
-## 1. Що є погодженим baseline
+## 1. The agreed baseline
 
-### Підтримуване операторське середовище
+### Supported operator environment
 - Linux
 - macOS
 - WSL
 
-Не first-class target у цьому пакеті:
-- Windows-native shell без WSL
+Not a first-class target in this package:
+- Windows-native shell without WSL
 
 
 ### Retained baseline
 - ECC plugin layer
-- ECC rules surface (upstream-owned, не дистрибується plugin-ом автоматично)
-- Context7 через ECC
-- GitHub MCP через ECC
-- Sequential Thinking через ECC
+- ECC rules surface (upstream-owned, not distributed by the plugin automatically)
+- Context7 via ECC
+- GitHub MCP via ECC
+- Sequential Thinking via ECC
 - context-mode
 - ui-ux-pro-max-skill
 - repomix
@@ -30,17 +30,17 @@
 - repo `.mcp.json`
 - Graphiti hooks, runtime, queue, ledger, admin CLI
 
-## 2. Що автоматизує саме цей package
+## 2. What this package itself automates
 
 ### Automated here
 - bootstrap repo surfaces
-- repo `CLAUDE.md` seed і memory ids
+- repo `CLAUDE.md` seed and memory ids
 - Graphiti hook runtime
 - project `.mcp.json` merge
 - `codebase-memory-mcp` project entry
 - `codebase-memory-mcp auto_index=true`
-- первинний `codebase-memory-mcp index_repository`
-- repo-declared plugin layer через `extraKnownMarketplaces` + `enabledPlugins`
+- initial `codebase-memory-mcp index_repository`
+- repo-declared plugin layer via `extraKnownMarketplaces` + `enabledPlugins`
 - status / baseline-doctor / doctor / flush / requeue / migration utilities
 
 ### Installed via upstream or Claude Code itself
@@ -50,7 +50,7 @@
 - `ccusage` runtime code when invoked through `npx`
 - `codebase-memory-mcp` binary install command
 
-## 3. Що входить у код пакета
+## 3. What ships in the package code
 
 - host-side direct ingest runtime:
   - `neo4j + openai`
@@ -71,7 +71,7 @@
   - Graphiti hooks
   - reproducible plugin baseline
 
-## 4. Що verified локально пакетом
+## 4. What the package verifies locally
 
 - repo bootstrap
 - dedicated runtime install
@@ -89,21 +89,21 @@
 - repo-declared plugin layer present in `.claude/settings.json`
 - `codebase-memory-mcp` auto-index bootstrap step executed by installer
 
-## 5. Що не позначено як already-verified у будь-якому середовищі
+## 5. What is not marked as already-verified in every environment
 
-- live Docker bring-up у конкретному середовищі, якщо Docker недоступний
+- live Docker bring-up in a specific environment when Docker is not available
 - interactive Claude Code marketplace/plugin prompt flow
 - interactive Claude Code project approval state
-- реальний remote auth login flow до хмарного MCP
-- `headersHelper` example shape для remote `.mcp.json` тепер у пакеті є, але його конкретна auth-програма лишається project/operator-owned
-- live Graphiti ingest у зовнішній DB без доступного backend-а
+- actual remote auth login flow to a cloud MCP
+- a `headersHelper` example shape for remote `.mcp.json` is now shipped, but its concrete auth program remains project/operator-owned
+- live Graphiti ingest into an external DB without a reachable backend
 - actual ECC rules install in this environment, unless operator ran the upstream step here
 
-## 6. Що свідомо виключено, щоб не дублювати відповідальність
+## 6. What is deliberately excluded to avoid duplicating responsibility
 
 - `graphify`
 - `code-review-graph`
-- `andrej-karpathy-skills` як plugin
+- `andrej-karpathy-skills` as a plugin
 - `mcp-builder`
 - `marketingskills`
 - `backend-architect`

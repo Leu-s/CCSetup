@@ -1,179 +1,179 @@
 # User manual
 
-## 0. Як користуватися цим фреймворком як людині
+## 0. How to use this framework as a human
 
-Найчастіший режим такий:
-- ти даєш Claude Code repo і цей пакет;
-- Claude Code читає docs і робить install/bootstrap;
-- далі ти ставиш задачі, а Claude Code користується agreed baseline автоматично.
+The most common mode is:
+- you hand Claude Code the repo and this package;
+- Claude Code reads the docs and performs install/bootstrap;
+- from then on you assign tasks, and Claude Code uses the agreed baseline automatically.
 
-Тобто цей manual не для того, щоб ти щодня вручну запускав усі інструменти.
-Він потрібний, щоб ти розумів, **що робить система, що робить Claude Code і що маєш робити ти сам**.
+So this manual is not meant to make you run every tool by hand every day.
+It is here so you understand **what the system does, what Claude Code does, and what you have to do yourself**.
 
-Початковий маршрут для людини:
+Starting route for a human:
 1. [TUTORIAL.md](TUTORIAL.md)
 2. [QUICKSTART.md](QUICKSTART.md)
 3. [INSTALL.md](INSTALL.md)
-4. далі вже цей manual
+4. then this manual
 
-## 1. Ментальна модель всього стеку
+## 1. Mental model of the whole stack
 
-Система має чіткі ролі.
+The system has clear roles.
 
 ### Retained Claude Code layer
-- **`everything-claude-code@everything-claude-code` (ECC bundle)** — базовий harness: skills, agents, hooks і bundled MCP surface.
-- **ECC rules surface** — окремий upstream-owned шар; plugin install не розносить його автоматично.
-- **Context7 / GitHub MCP / Sequential Thinking** — приходять через ECC bundle.
-- **context-mode** — зменшує шум від великих tool outputs у контексті.
-- **ui-ux-pro-max-skill** — design intelligence для UI/UX задач.
-- **repomix** — operator-local CLI для AI-friendly snapshot усього repo.
-- **ccusage** — operator-local CLI для usage/cost по Claude Code логах.
+- **`everything-claude-code@everything-claude-code` (ECC bundle)** — the base harness: skills, agents, hooks, and bundled MCP surface.
+- **ECC rules surface** — a separate upstream-owned layer; plugin install does not deploy it automatically.
+- **Context7 / GitHub MCP / Sequential Thinking** — arrive via the ECC bundle.
+- **context-mode** — reduces noise from large tool outputs in context.
+- **ui-ux-pro-max-skill** — design intelligence for UI/UX tasks.
+- **repomix** — operator-local CLI for an AI-friendly snapshot of the whole repo.
+- **ccusage** — operator-local CLI for usage/cost on Claude Code logs.
 
 ### Repo layer
-- **Graphiti** — канонічна довга пам’ять проекту.
-- **codebase-memory-mcp** — structural memory коду.
-- **repo hooks** — автоматичний capture і delivery memory summaries.
-- **`CLAUDE.md`** — working principles, tool priority і project identity.
-- **repo `.claude/settings.json`** — hooks плюс reproducible plugin baseline.
+- **Graphiti** — the canonical long-term memory of the project.
+- **codebase-memory-mcp** — structural memory of the code.
+- **repo hooks** — automatic capture and delivery of memory summaries.
+- **`CLAUDE.md`** — working principles, tool priority, and project identity.
+- **repo `.claude/settings.json`** — hooks plus the reproducible plugin baseline.
 
 ## 2. Tool order
 
-1. **`codebase-memory-mcp`** — structural questions про код.
+1. **`codebase-memory-mcp`** — structural questions about the code.
 2. **Graphiti** — continuity, decisions, constraints, unresolved risks.
 3. **Context7** — current library/framework docs.
 4. **GitHub MCP** — issues, PRs, branches, repo actions.
-5. **raw file reads** — тільки після звуження пошуку.
+5. **raw file reads** — only after narrowing the search.
 
-## 3. Як працює automatic memory у repo
+## 3. How automatic memory works in the repo
 
-### На старті сесії
+### At session start
 `SessionStart`:
-- визначає logical/storage ids;
-- export-ить env для решти сесії;
-- читає локальний delivered ledger;
-- друкує короткий checkpoint у контекст.
+- determines logical/storage ids;
+- exports env for the rest of the session;
+- reads the local delivered ledger;
+- prints a short checkpoint into context.
 
-### Під час сесії
-`InstructionsLoaded`, `CwdChanged` і `FileChanged`:
-- тримають runtime exports в актуальному стані;
-- оновлюють `watchPaths`;
-- логують lifecycle події.
+### During the session
+`InstructionsLoaded`, `CwdChanged`, and `FileChanged`:
+- keep runtime exports current;
+- update `watchPaths`;
+- log lifecycle events.
 
-### Перед compaction і в кінці відповіді
-`PreCompact` і `Stop`:
-- збирають короткий summary з сесії;
-- пишуть payload у spool і ledger;
-- не чекають live network write.
+### Before compaction and at the end of a reply
+`PreCompact` and `Stop`:
+- collect a short summary from the session;
+- write the payload to spool and ledger;
+- do not wait on a live network write.
 
-### Поза Claude-відповіддю
+### Outside the Claude reply
 `graphiti_flush.py`:
-- читає due payloads зі spool;
-- доставляє їх через `graphiti_core`;
-- переносить успіх у archive;
-- робить retry або dead-letter при збоях.
+- reads due payloads from spool;
+- delivers them via `graphiti_core`;
+- moves successes to archive;
+- retries or dead-letters on failures.
 
-## 4. Як працює plugin baseline тепер
+## 4. How the plugin baseline works now
 
-Retained plugin baseline більше не живе лише в user scope.
+The retained plugin baseline no longer lives only in user scope.
 
-Після bootstrap repo `.claude/settings.json` уже декларує:
-- marketplace source для `everything-claude-code@everything-claude-code` (ECC bundle), `context-mode@context-mode` і `ui-ux-pro-max@ui-ux-pro-max-skill`;
-- `enabledPlugins` для цих трьох plugin-ів.
+After bootstrap, the repo `.claude/settings.json` already declares:
+- marketplace source for `everything-claude-code@everything-claude-code` (ECC bundle), `context-mode@context-mode`, and `ui-ux-pro-max@ui-ux-pro-max-skill`;
+- `enabledPlugins` for those three plugins.
 
-Наслідок:
-- fresh clone отримує той самий **plugin contract**;
-- cloud session може відтворити **plugin portion** baseline з repo;
-- user preinstall лишається зручністю, а не єдиним способом налаштування.
+Consequence:
+- a fresh clone gets the same **plugin contract**;
+- a cloud session can reproduce the **plugin portion** of the baseline from the repo;
+- user preinstall remains a convenience, not the only way to configure.
 
-Важлива межа:
-- `repomix` і `ccusage` не ставляться через repo settings;
-- ECC `rules` теж не розносяться plugin layer автоматично.
+Important boundary:
+- `repomix` and `ccusage` are not installed via repo settings;
+- ECC `rules` are also not deployed by the plugin layer automatically.
 
-## 5. `codebase-memory-mcp`: що тепер автоматизовано
+## 5. `codebase-memory-mcp`: what is now automated
 
-Раніше слабке місце було в тому, що після manual binary install треба було ще не забути:
-- restart agent;
-- сказати “Index this project”;
-- або ввімкнути `auto_index`.
+The previous weak spot was that after manual binary install you still had to remember to:
+- restart the agent;
+- say "Index this project";
+- or enable `auto_index`.
 
-У цьому пакеті install flow тепер робить дві речі сам:
+In this package the install flow now does two things itself:
 - `codebase-memory-mcp config set auto_index true`
 - `codebase-memory-mcp cli index_repository '{"repo_path":"..."}'`
 
-Тобто на момент першого відкриття repo в Claude Code structural layer уже не лишається “напівактивованим”.
+So by the time you first open the repo in Claude Code, the structural layer is no longer left "half-activated".
 
-## 6. Коли покладатися на automatic memory, а коли на MCP tools
+## 6. When to rely on automatic memory vs. MCP tools
 
-### Покладайся на automatic memory коли
-- треба, щоб важливі рішення не губилися між сесіями;
-- хочеш мати короткий local checkpoint на старті;
-- тобі достатньо summary-level continuity.
+### Rely on automatic memory when
+- you need important decisions to not get lost between sessions;
+- you want a short local checkpoint at start;
+- summary-level continuity is enough.
 
-### Використовуй Graphiti MCP tools коли
-- треба знайти конкретні facts або entities;
-- треба дістати older history з remote graph;
-- працюєш на новій машині і local ledger ще порожній.
+### Use Graphiti MCP tools when
+- you need to find specific facts or entities;
+- you need to pull older history from the remote graph;
+- you are on a new machine and the local ledger is still empty.
 
-### Використовуй `codebase-memory-mcp` коли
-- треба знайти точку входу в незнайомий repo;
-- треба зрозуміти, хто що викликає;
-- треба оцінити impact до зміни коду;
-- треба зменшити кількість raw file reads.
+### Use `codebase-memory-mcp` when
+- you need to find the entry point in an unfamiliar repo;
+- you need to understand who calls what;
+- you need to assess impact before a code change;
+- you need to reduce the number of raw file reads.
 
-## 7. Як взаємодіють ECC hooks, context-mode і repo Graphiti hooks
+## 7. How ECC hooks, context-mode, and repo Graphiti hooks interact
 
-Вони не повинні підміняти один одного.
+They should not replace each other.
 
-- ECC дає свій global harness і global hooks.
-- context-mode дає routing/sandbox hooks через plugin.
-- repo `.claude/settings.json` із цього пакета додає Graphiti lifecycle hooks.
+- ECC provides its own global harness and global hooks.
+- context-mode provides routing/sandbox hooks via the plugin.
+- The repo `.claude/settings.json` from this package adds Graphiti lifecycle hooks.
 
-Важливе правило:
-- **не копіюй ECC plugin hooks вручну в repo `settings.json`**;
-- **не намагайся перенести context-mode hook config у repo hooks цього пакета**.
+Important rule:
+- **do not copy ECC plugin hooks by hand into the repo `settings.json`**;
+- **do not try to port context-mode hook config into the repo hooks of this package**.
 
-Repo hooks цього пакета — **додатковий project layer**, а не заміна ECC або context-mode.
+The repo hooks of this package are an **additional project layer**, not a replacement for ECC or context-mode.
 
 ## 8. Fresh machine / fresh clone semantics
 
-`SessionStart` **не** робить remote search у Graphiti. Він читає тільки локальний delivered ledger у `.claude/state/graphiti-ledger.sqlite3`.
+`SessionStart` does **not** do a remote search in Graphiti. It reads only the local delivered ledger at `.claude/state/graphiti-ledger.sqlite3`.
 
-Наслідок:
-- на новій машині memory checkpoint на старті може бути порожнім;
-- це не означає, що remote Graphiti порожній;
-- якщо треба відразу витягнути shared history, використай Graphiti MCP search tools вручну.
+Consequence:
+- on a new machine, the memory checkpoint at start may be empty;
+- that does not mean remote Graphiti is empty;
+- if you need shared history right away, use Graphiti MCP search tools manually.
 
-Plugin baseline при цьому поводиться інакше:
-- якщо repo trusted і доступ до marketplace є, Claude Code може поставити repo-declared plugins на старті сесії;
-- якщо plugin already preinstalled locally, prompts або не з’являться, або будуть мінімальні.
+The plugin baseline behaves differently here:
+- if the repo is trusted and marketplace access is available, Claude Code may install the repo-declared plugins at session start;
+- if a plugin is already preinstalled locally, prompts will either not appear or will be minimal.
 
 ## 9. Best practices
 
-1. **Одна канонічна long-term memory:** Graphiti.
-2. **Не дублюй ECC MCP-и в repo `.mcp.json`:** Context7, GitHub MCP і Sequential Thinking already covered globally.
-3. **Не дублюй ECC hooks у repo settings.**
-4. **Для code questions спершу structural tools, потім files.**
-5. **Не міняй `GRAPHITI_STORAGE_GROUP_ID` вручну без потреби.** Працюй через `MEMORY_GROUP_ID` і admin migration commands.
-6. **Тримай секрети в env, а не в git.**
-7. **Не плутай MCP health із ingest health.** Graphiti HTTP path і host-side direct ingest — різні перевірки.
+1. **One canonical long-term memory:** Graphiti.
+2. **Do not duplicate ECC MCPs in the repo `.mcp.json`:** Context7, GitHub MCP, and Sequential Thinking are already covered globally.
+3. **Do not duplicate ECC hooks in repo settings.**
+4. **For code questions, structural tools first, then files.**
+5. **Do not change `GRAPHITI_STORAGE_GROUP_ID` by hand without reason.** Work through `MEMORY_GROUP_ID` and admin migration commands.
+6. **Keep secrets in env, not in git.**
+7. **Do not conflate MCP health with ingest health.** The Graphiti HTTP path and host-side direct ingest are different checks.
 
 ## 9a. Excluded surfaces
 
 Do not use the `memory` MCP shipped by the `everything-claude-code` bundle. Graphiti is the canonical long-term memory layer for this framework. Writing to two memory backends produces split state and conflicts with the queue/ledger/archive contract.
 
-Практично це означає:
-- не додавай bundled `memory` MCP у repo `.mcp.json`;
-- не викликай його tools паралельно з Graphiti в одній сесії;
-- якщо ECC bundle все одно його експонує, покладайся на `graphiti-memory` як єдиний write path.
+In practice this means:
+- do not add the bundled `memory` MCP to the repo `.mcp.json`;
+- do not call its tools in parallel with Graphiti in the same session;
+- if the ECC bundle exposes it anyway, rely on `graphiti-memory` as the single write path.
 
-## 10. Найкорисніші щоденні команди
+## 10. Most useful daily commands
 
 ### Ecosystem baseline check
 ```bash
 ./tools/graphiti_admin.py baseline-doctor /absolute/path/to/repo
 ```
 
-### Статус repo memory layer
+### Repo memory layer status
 ```bash
 ./tools/graphiti_admin.py status /absolute/path/to/repo
 ```
@@ -203,81 +203,81 @@ npx repomix@latest
 npx ccusage@latest
 ```
 
-Примітка: `npx`-шлях для `repomix` і `ccusage` може вимагати мережу на першому запуску, якщо npm cache ще порожній.
+Note: the `npx` path for `repomix` and `ccusage` may require network on first run if the npm cache is still empty.
 
-## 11. Щоденні сценарії користувача
+## 11. Daily user scenarios
 
-### Сценарій A. Я щойно відкрив новий repo
-Попроси Claude Code:
-- перевірити `baseline-doctor`, `status`, `doctor`;
-- пояснити, що вже готово;
-- далі працювати через agreed tool order.
+### Scenario A. I just opened a new repo
+Ask Claude Code to:
+- run `baseline-doctor`, `status`, `doctor`;
+- explain what is already ready;
+- then work through the agreed tool order.
 
-### Сценарій B. Я повернувся до задачі наступного дня
-Попроси Claude Code:
-- спершу підхопити startup checkpoint;
-- при потребі дочитати remote Graphiti history;
-- потім продовжити задачу.
+### Scenario B. I came back to the task the next day
+Ask Claude Code to:
+- pick up the startup checkpoint first;
+- read remote Graphiti history if needed;
+- then continue the task.
 
-### Сценарій C. Я не розумію, що відбувається у framework
-Попроси Claude Code:
-- пояснити repo baseline;
-- сказати, які hooks активні;
-- сказати, що автоматизовано, а що все ще потребує твоєї участі.
+### Scenario C. I do not understand what is happening in the framework
+Ask Claude Code to:
+- explain the repo baseline;
+- say which hooks are active;
+- say what is automated and what still needs your involvement.
 
-### Сценарій D. Мені треба швидко зрозуміти незнайомий codebase
-Попроси Claude Code почати з `codebase-memory-mcp`, а не з хаотичного читання файлів.
+### Scenario D. I need to quickly understand an unfamiliar codebase
+Ask Claude Code to start with `codebase-memory-mcp` instead of reading files at random.
 
-### Сценарій E. Мені треба UI/UX задача
-Скажи явно, що можна спертися на `ui-ux-pro-max-skill`.
+### Scenario E. I have a UI/UX task
+Say explicitly that it can lean on `ui-ux-pro-max-skill`.
 
-## 12. Готові запити до Claude Code
+## 12. Ready-made requests for Claude Code
 
-### Поясни поточний стан repo
-
-```text
-Поясни мені поточний стан цього repo за фреймворком: що вже встановлено, які hooks і MCP-и працюють, що автоматизовано, а що ще потребує моєї участі.
-```
-
-### Підготуй repo з нуля
+### Explain the current state of the repo
 
 ```text
-Прочитай README.md, TUTORIAL.md, QUICKSTART.md, INSTALL.md і USER-MANUAL.md з цього пакета.
-Потім підготуй цей repo за фреймворком.
-Перед ручними кроками коротко скажи, що саме мені треба підтвердити або ввести самому.
+Explain to me the current state of this repo under the framework: what is already installed, which hooks and MCPs are working, what is automated, and what still needs my involvement.
 ```
 
-### Продовж попередню роботу
+### Set up the repo from scratch
 
 ```text
-Почни з memory checkpoint і structural overview цього repo, а потім продовжуй задачу.
+Read README.md, TUTORIAL.md, QUICKSTART.md, INSTALL.md, and USER-MANUAL.md from this package.
+Then set up this repo under the framework.
+Before any manual steps, briefly tell me what I need to confirm or enter myself.
 ```
 
-### Поясни framework людською мовою
+### Continue previous work
 
 ```text
-Поясни мені цей фреймворк людською мовою: що тут робить baseline, що додає repo overlay, як працюють пам'ять, hooks, plugins і коли я маю щось підтверджувати сам.
+Start with the memory checkpoint and structural overview of this repo, then continue the task.
 ```
 
-## 13. Що людина все ще робить сама
+### Explain the framework in plain language
 
-Людина все ще відповідає за:
-- правильні secrets і env values;
-- довіру до repo;
+```text
+Explain this framework to me in plain language: what the baseline does, what the repo overlay adds, how memory, hooks, and plugins work, and when I need to confirm something myself.
+```
+
+## 13. What the human still does themselves
+
+The human is still responsible for:
+- correct secrets and env values;
+- trusting the repo;
 - plugin approvals;
 - MCP approvals;
-- вибір реального робочого завдання.
+- choosing the actual task to work on.
 
-Фреймворк і Claude Code знімають з людини багато ручної роботи, але не повинні приховувати ці точки контролю.
+The framework and Claude Code remove a lot of manual work from the human, but they should not hide these control points.
 
-## 14. Найважливіше правило користування
+## 14. The most important usage rule
 
-Не намагайся обійти framework ручними дублями.
+Do not try to bypass the framework with manual duplicates.
 
-Не треба:
-- вдруге додавати ті самі MCP-и в repo `.mcp.json`;
-- вручну копіювати plugin hooks у repo settings;
-- вручну крутити storage ids;
-- вручну лагодити `.claude/state/`, поки не зрозумів, що саме зламалось.
+Do not:
+- add the same MCPs a second time in the repo `.mcp.json`;
+- copy plugin hooks by hand into repo settings;
+- twiddle storage ids by hand;
+- patch `.claude/state/` by hand before you understand what actually broke.
 
-Спершу проси Claude Code пояснити і перевірити стан через docs та admin commands.
+First ask Claude Code to explain and check state via the docs and the admin commands.

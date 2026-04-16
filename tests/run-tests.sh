@@ -55,15 +55,11 @@ if command -v systemd-analyze >/dev/null 2>&1; then
 fi
 
 if command -v docker >/dev/null 2>&1; then
-  tmp_env_neo="$ROOT_DIR/ops/env/graphiti.neo4j.env"
-  tmp_env_falkor="$ROOT_DIR/ops/env/graphiti.falkordb.env"
-  cp "$ROOT_DIR/ops/env/graphiti.neo4j.env.example" "$tmp_env_neo"
-  cp "$ROOT_DIR/ops/env/graphiti.falkordb.env.example" "$tmp_env_falkor"
-  trap 'rm -f "$tmp_env_neo" "$tmp_env_falkor"' EXIT
-  docker compose -f "$ROOT_DIR/ops/docker-compose.graphiti-neo4j.yml" --env-file "$tmp_env_neo" config >/dev/null
-  docker compose -f "$ROOT_DIR/ops/docker-compose.graphiti-falkordb.yml" --env-file "$tmp_env_falkor" config >/dev/null
-  rm -f "$tmp_env_neo" "$tmp_env_falkor"
-  trap - EXIT
+  # Compose services load env from ${HOME}/.claude/graphiti.{neo4j,falkordb}.env with
+  # required=false, so `config` resolves even when those files are absent. Tests exercise
+  # that path — we do not pre-create files under $HOME.
+  docker compose -f "$ROOT_DIR/ops/docker-compose.graphiti-neo4j.yml" config >/dev/null
+  docker compose -f "$ROOT_DIR/ops/docker-compose.graphiti-falkordb.yml" config >/dev/null
 fi
 
 python3 -m unittest discover -s "$ROOT_DIR/tests" -p "test_*.py"

@@ -58,7 +58,7 @@ CCSETUP_DIR="${CCSETUP_DIR:-$HOME/src/ccsetup}"
 
 # 2. Секрети і env для graphiti_core: chmod 600, містить OPENAI_API_KEY,
 #    NEO4J_PASSWORD, NEO4J_URI, GOOGLE_API_KEY тощо.
-ENV_FILE="${GRAPHITI_CRON_ENV_FILE:-$CCSETUP_DIR/ops/env/graphiti.neo4j.env}"
+ENV_FILE="${GRAPHITI_CRON_ENV_FILE:-$HOME/.claude/graphiti.neo4j.env}"
 
 # 3. Список repo, по одному абсолютному шляху на рядок, # коментарі та порожні рядки ігноруються.
 REPOS_LIST="${GRAPHITI_CRON_REPOS_LIST:-$HOME/.claude/hooks/graphiti-flush-repos.list}"
@@ -89,7 +89,7 @@ done < "$REPOS_LIST"
 ```
 
 Що робить:
-- вантажить env з `<ccsetup>/ops/env/graphiti.neo4j.env` (chmod 600, містить `OPENAI_API_KEY`, `NEO4J_PASSWORD`, `NEO4J_URI`, опційно `GOOGLE_API_KEY`);
+- вантажить env з `~/.claude/graphiti.neo4j.env` (chmod 600, містить `OPENAI_API_KEY`, `NEO4J_PASSWORD`, `NEO4J_URI`, опційно `GOOGLE_API_KEY`);
 - ітерує список repo з `~/.claude/hooks/graphiti-flush-repos.list` (один абсолютний шлях на рядок, `#`-коментарі і порожні рядки пропускаються);
 - на кожен repo виконує `./tools/graphiti_admin.py flush <repo> --limit 50`;
 - пише per-run лог у `~/.claude/state/cron-flush.log` (stdout+stderr per repo).
@@ -110,7 +110,7 @@ done < "$REPOS_LIST"
 
 Права і послідовність:
 - `chmod +x ~/.claude/hooks/graphiti-flush-cron.sh`;
-- `chmod 600 <ccsetup>/ops/env/graphiti.neo4j.env`;
+- `chmod 600 ~/.claude/graphiti.neo4j.env`;
 - `crontab -e` щоб додати рядок вище.
 
 ### 5.3 macOS Full Disk Access requirement
@@ -135,7 +135,7 @@ done < "$REPOS_LIST"
 The package does not mandate a specific scheduler. Two supported paths:
 
 - **Linux / WSL via systemd** — templates in `ops/systemd/` (`graphiti-flush@.service` + `graphiti-flush@.timer`, 2-minute interval).
-- **Cross-platform via cron** — wrapper at `~/.claude/hooks/graphiti-flush-cron.sh` (shape above) that loads `<ccsetup>/ops/env/graphiti.neo4j.env`, iterates `~/.claude/hooks/graphiti-flush-repos.list`, runs `./tools/graphiti_admin.py flush <repo> --limit 50` per entry, and logs to `~/.claude/state/cron-flush.log`. Sample crontab: `*/15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh >> ~/.claude/state/cron-flush.log 2>&1`.
+- **Cross-platform via cron** — wrapper at `~/.claude/hooks/graphiti-flush-cron.sh` (shape above) that loads `~/.claude/graphiti.neo4j.env`, iterates `~/.claude/hooks/graphiti-flush-repos.list`, runs `./tools/graphiti_admin.py flush <repo> --limit 50` per entry, and logs to `~/.claude/state/cron-flush.log`. Sample crontab: `*/15 * * * * ~/.claude/hooks/graphiti-flush-cron.sh >> ~/.claude/state/cron-flush.log 2>&1`.
 
 On macOS, `/usr/sbin/cron` must be granted Full Disk Access via `System Settings → Privacy & Security → Full Disk Access`. Without FDA, the cron process runs but cannot read protected paths (env file, repos list, `.claude/state/**`), and flushes fail silently. The terminal app used to edit crontab should also have FDA.
 

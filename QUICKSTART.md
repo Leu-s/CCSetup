@@ -44,10 +44,11 @@ export CODEBASE_MEMORY_MCP_BIN="/absolute/path/to/codebase-memory-mcp"
 ## 4. Підготуй Graphiti env
 
 ```bash
-cp ops/env/graphiti.neo4j.env.example ops/env/graphiti.neo4j.env
+cp ops/env/graphiti.neo4j.env.example ~/.claude/graphiti.neo4j.env
+chmod 600 ~/.claude/graphiti.neo4j.env
 ```
 
-У `ops/env/graphiti.neo4j.env` заповни мінімум:
+У `~/.claude/graphiti.neo4j.env` заповни мінімум:
 - `OPENAI_API_KEY` або `GOOGLE_API_KEY`
 - `NEO4J_PASSWORD`, якщо не хочеш demo default `demodemo`
 

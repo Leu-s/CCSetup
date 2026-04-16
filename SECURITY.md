@@ -18,6 +18,8 @@ Package задуманий як **localhost-first** memory stack.
 
 Repo surfaces мають містити shared config і env expansion, а не самі секрети.
 
+Canonical runtime env file живе поза repo: `~/.claude/graphiti.neo4j.env` (або `graphiti.falkordb.env`), `chmod 600`. Shipped Docker Compose стеки вантажать його через `${HOME}/.claude/graphiti.<backend>.env` з `required: false`, тому стек піднімається і без файлу (з env defaults), а реальні секрети ніколи не потрапляють у repo working tree.
+
 ## 3. Project-scoped MCP approvals — не обхідний шум, а захист
 
 `graphiti-memory` живе в repo `.mcp.json`.

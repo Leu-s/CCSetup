@@ -143,7 +143,8 @@ Packaged MCP Docker configs тут є тільки для `openai` і `gemini`, 
 
 ### Neo4j
 ```bash
-cp ops/env/graphiti.neo4j.env.example ops/env/graphiti.neo4j.env
+cp ops/env/graphiti.neo4j.env.example ~/.claude/graphiti.neo4j.env
+chmod 600 ~/.claude/graphiti.neo4j.env
 ```
 
 Заповни мінімум:
@@ -157,7 +158,8 @@ cp ops/env/graphiti.neo4j.env.example ops/env/graphiti.neo4j.env
 
 ### FalkorDB
 ```bash
-cp ops/env/graphiti.falkordb.env.example ops/env/graphiti.falkordb.env
+cp ops/env/graphiti.falkordb.env.example ~/.claude/graphiti.falkordb.env
+chmod 600 ~/.claude/graphiti.falkordb.env
 ```
 
 Заповни мінімум:

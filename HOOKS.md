@@ -46,14 +46,25 @@
 ## 7. `ConfigChange`
 - блокує небажаний drift у package-managed project config.
 
-## 8. Що hooks не роблять
+## 8. `PostCompact`
+- capture короткий anchor одразу після того, як Claude стиснув контекст;
+- пише payload у spool/ledger, так само як `PreCompact`, але ПІСЛЯ compaction;
+- матчер `manual|auto` охоплює обидва типи compaction;
+- мета: зберегти continuity від compact-версії transcript-а, а не тільки від pre-compact snapshot.
+
+## 9. `PostToolUseFailure`
+- capture tool-level failure як boundary-signal memory (timeout, permission denial, unreachable backend);
+- stdin payload містить `tool_name` і `tool_error`;
+- non-blocking; записує в queue для подальшого аналізу повторюваних frictions.
+
+## 10. Що hooks не роблять
 - не підміняють ECC hooks;
 - не підміняють context-mode hooks;
 - не запускають plugin installation flows;
 - не копіюють ECC/plugin hooks у repo config;
 - не керують глобальним Claude Code plugin state.
 
-## 9. Де живе `codebase-memory-mcp` first-run logic
+## 11. Де живе `codebase-memory-mcp` first-run logic
 
 Це більше не hook concern.
 

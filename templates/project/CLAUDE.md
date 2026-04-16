@@ -34,6 +34,8 @@ Memory capture is hook-driven. Claude does not write to Graphiti directly during
 
 - `Stop` hook (`.claude/hooks/graphiti_stop.py`) spools a session-end episode into the local queue and ledger automatically. If `queue.asyncFlushOnStop` is true in `.claude/graphiti.json`, a detached flush is fired.
 - `PreCompact` hook (`.claude/hooks/pre_compact.py`) spools pre-compaction context so long-running sessions retain continuity across compaction boundaries.
+- `PostCompact` hook (`.claude/hooks/post_compact.py`) spools a short anchor right after Claude compacts the transcript, so continuity survives the shortened context rather than being anchored only to the pre-compact snapshot.
+- `PostToolUseFailure` hook (`.claude/hooks/post_tool_use_failure.py`) captures tool-level failures (timeouts, permission denials, unreachable backends) as boundary signals — useful for reasoning about recurring friction across sessions.
 - Delivery into Neo4j runs via `graphiti_core` (not the MCP) and is triggered by the cron wrapper at `~/.claude/hooks/graphiti-flush-cron.sh` or manually via `./tools/graphiti_admin.py flush <repo>`.
 
 Write only high-signal content: architectural decisions, load-bearing constraints, user preferences that must carry across sessions, and unresolved risks worth revisiting. Do not write: large code blocks, raw logs, exploratory noise, or anything already obvious from git history.

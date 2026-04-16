@@ -54,6 +54,8 @@ REQUIRED_FILES = [
     "templates/project/.claude/hooks/cwd_changed.py",
     "templates/project/.claude/hooks/file_changed.py",
     "templates/project/.claude/hooks/pre_compact.py",
+    "templates/project/.claude/hooks/post_compact.py",
+    "templates/project/.claude/hooks/post_tool_use_failure.py",
     "templates/project/.claude/hooks/graphiti_stop.py",
     "templates/project/.claude/hooks/graphiti_flush.py",
     "templates/project/.claude/hooks/graphiti_doctor.py",

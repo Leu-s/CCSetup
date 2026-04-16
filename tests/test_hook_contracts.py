@@ -219,6 +219,66 @@ class HookContractTests(unittest.TestCase):
             )
             self.assertEqual(marker_path.read_text(encoding="utf-8"), "1")
 
+    def test_post_compact_hook_queues_checkpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = pathlib.Path(tmp) / "repo"
+            self._bootstrap_repo(repo)
+            self._link_runtime_python(repo)
+
+            env = os.environ.copy()
+            env["CLAUDE_PROJECT_DIR"] = str(repo)
+            proc = subprocess.run(
+                [str(repo / ".claude" / "hooks" / "run_python.sh"), "post_compact.py"],
+                cwd=repo,
+                env=env,
+                input=json.dumps({"hook_event_name": "PostCompact", "source": "auto"}),
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(proc.returncode, 0)
+
+            spool_dir = repo / ".claude" / "state" / "graphiti-spool"
+            queued = list(spool_dir.glob("*.json"))
+            self.assertTrue(queued, "post_compact did not enqueue any payload")
+            wrapped = json.loads(queued[-1].read_text(encoding="utf-8"))
+            payload = wrapped["payload"]
+            self.assertEqual(payload["hook_event_name"], "PostCompact")
+            self.assertIn("post-compact", payload["episode_body"].lower())
+
+    def test_post_tool_use_failure_hook_captures_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = pathlib.Path(tmp) / "repo"
+            self._bootstrap_repo(repo)
+            self._link_runtime_python(repo)
+
+            env = os.environ.copy()
+            env["CLAUDE_PROJECT_DIR"] = str(repo)
+            proc = subprocess.run(
+                [str(repo / ".claude" / "hooks" / "run_python.sh"), "post_tool_use_failure.py"],
+                cwd=repo,
+                env=env,
+                input=json.dumps({
+                    "hook_event_name": "PostToolUseFailure",
+                    "tool_name": "Bash",
+                    "tool_error": "timeout after 120s running docker compose",
+                    "tool_use_id": "test_use_1",
+                }),
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(proc.returncode, 0)
+
+            spool_dir = repo / ".claude" / "state" / "graphiti-spool"
+            queued = list(spool_dir.glob("*.json"))
+            self.assertTrue(queued, "post_tool_use_failure did not enqueue any payload")
+            wrapped = json.loads(queued[-1].read_text(encoding="utf-8"))
+            payload = wrapped["payload"]
+            self.assertEqual(payload["hook_event_name"], "PostToolUseFailure")
+            self.assertIn("Bash", payload["episode_body"])
+            self.assertIn("timeout", payload["episode_body"].lower())
+
 
 if __name__ == "__main__":
     unittest.main()

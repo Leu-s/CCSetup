@@ -18,10 +18,6 @@
 ├── CONFIG-REFERENCE.md
 ├── CLI-REFERENCE.md
 ├── SUPPORT-MATRIX.md
-├── IMPLEMENTATION-STATUS.md
-├── VALIDATION.md
-├── NO-SCAFFOLDING-AUDIT.md
-├── INDEPENDENT-RE-AUDIT-v7-FINAL.md
 ├── ops/
 │   ├── docker-compose.graphiti-neo4j.yml
 │   ├── docker-compose.graphiti-falkordb.yml

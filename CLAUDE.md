@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is **the framework package itself**, not a project that consumes it. It ships the retained Claude Code ecosystem baseline declaration plus the repo-owned Graphiti memory overlay, and bootstraps them into *other* target repos via `./tools/install-graphiti-stack.sh <target-repo>`. When working here, you are editing the distribution — templates, installers, hooks, docs, and tests — not the output of a bootstrap.
 
-Docs are a mix of Ukrainian and English. The canonical entry is `README.md`; `ARCHITECTURE.md`, `STACK-DECISIONS.md`, and `IMPLEMENTATION-STATUS.md` describe intent and scope boundaries that matter when making changes.
+Docs are a mix of Ukrainian and English. The canonical entry is `README.md`; `ARCHITECTURE.md` and `STACK-DECISIONS.md` describe intent and scope boundaries that matter when making changes.
 
 ## Commands
 
@@ -45,13 +45,13 @@ Never introduce a second long-term memory engine, a second code-graph layer, or 
 
 ## Invariants you must preserve when editing
 
-These are enforced by tests, by `baseline-doctor`, by `doctor`, or by `NO-SCAFFOLDING-AUDIT.md`. Breaking them silently is the failure mode this package exists to prevent.
+These are enforced by tests, by `baseline-doctor`, and by `doctor`. Breaking them silently is the failure mode this package exists to prevent.
 
 - **Do not duplicate ECC-provided MCPs** (`context7`, `github`, `sequential-thinking`) in the seeded repo `.mcp.json`. They arrive via ECC.
 - **Do not copy ECC or context-mode plugin hooks** into the seeded repo `.claude/settings.json`. Repo hooks here cover Graphiti lifecycle only.
 - **`autoMemoryEnabled` must be `false`** in seeded project settings — Graphiti is the canonical memory layer.
 - **Bootstrap must not drop custom fields**: user-owned hooks in `settings.json` and custom MCP auth fields (`headers`, `headersHelper`) in `.mcp.json` must survive a re-bootstrap. `test_bootstrap_hygiene.py` covers this.
 - **Group IDs**: `MEMORY_GROUP_ID` is the human-readable logical identity; `GRAPHITI_STORAGE_GROUP_ID` is deterministic `g_<slug>_<hash>`, NFKC-normalized, never hand-edited. Rename flows go through `graphiti_admin.py migrate-logical-id --mode {keep-storage|new-storage}`. See `GROUP-ID-POLICY.md`.
-- **Docs-to-code fidelity**: if docs describe something as automated, there must be code for it. If a surface is upstream-owned, docs must say so explicitly. `NO-SCAFFOLDING-AUDIT.md` is the standing contract; do not regress it.
+- **Docs-to-code fidelity**: if docs describe something as automated, there must be code for it. If a surface is upstream-owned, docs must say so explicitly. Do not regress this contract.
 - **Localhost-first defaults**: Compose files bind to `127.0.0.1`. Remote exposure is an explicit opt-in, and shipped Caddy/remote examples are examples, not production configs.
 - **Do not commit secrets**. `.claude/state/**`, `.env*`, and `secrets/**` are sensitive; the security-deny snippet in `SECURITY.md` section 7 is the recommended shape.

@@ -28,9 +28,6 @@ REQUIRED_FILES = [
     "CLI-REFERENCE.md",
     "FILE-TREE.md",
     "SUPPORT-MATRIX.md",
-    "IMPLEMENTATION-STATUS.md",
-    "VALIDATION.md",
-    "NO-SCAFFOLDING-AUDIT.md",
     "ops/docker-compose.graphiti-neo4j.yml",
     "ops/docker-compose.graphiti-falkordb.yml",
     "ops/env/graphiti.neo4j.env.example",
@@ -226,7 +223,6 @@ def _docs_capture_supported_platforms(root: pathlib.Path) -> bool:
         (root / 'README.md').read_text(encoding='utf-8'),
         (root / 'INSTALL.md').read_text(encoding='utf-8'),
         (root / 'SUPPORT-MATRIX.md').read_text(encoding='utf-8'),
-        (root / 'VALIDATION.md').read_text(encoding='utf-8'),
     ]
     joined = '\n'.join(docs)
     return all(probe in joined for probe in ['Linux', 'macOS', 'WSL']) and 'Windows-native' in joined
@@ -257,6 +253,8 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         rel = str(path.relative_to(ROOT))
         if path.resolve() == self_path:
+            continue
+        if ".git" in path.parts:
             continue
         if "__pycache__" in path.parts or path.suffix.lower() in BINARY_FILE_SUFFIXES:
             forbidden_cache_files.append(rel)

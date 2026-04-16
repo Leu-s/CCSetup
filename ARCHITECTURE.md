@@ -65,3 +65,18 @@ Claude Code session
 - один canonical long-term memory layer — Graphiti;
 - один базовий harness — ECC;
 - behavior principles — у `CLAUDE.md`, а не в окремому plugin.
+
+## 5. Межі — що свідомо не автоматизується пакетом
+
+Ці поверхні лишаються зовнішніми runtime boundaries Claude Code і не є пропусками пакета:
+- interactive plugin download/install у Claude Code UI/CLI;
+- ECC `rules` install — через upstream ECC installer або ручне копіювання;
+- `repomix` / `ccusage` download через `npx`, якщо локальний кеш ще порожній;
+- interactive project MCP approvals;
+- remote auth login flow до зовнішніх MCP endpoints.
+
+Додатково поза baseline залишаються:
+- другий canonical memory engine;
+- другий code-graph engine поверх `codebase-memory-mcp`;
+- ще один behavior plugin поверх принципів у `CLAUDE.md`;
+- broad plugin layer з auth/perms surface без критичної потреби.
